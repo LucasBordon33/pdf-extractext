@@ -1,6 +1,7 @@
 from typing import Dict, Any
 from repositories.database import DatabaseRepository
-
+from pypdf import PdfReader
+import io
 
 class PDFService:
     def __init__(self):
@@ -30,7 +31,13 @@ class PDFService:
         }
 
     def _extract_text(self, pdf_content: bytes) -> str:
-        return "Texto extraído del PDF (implementación pendiente)"
+        text = ""
+        ## Hago un buffer para los bytes y con PdfReader transformo las páginas a un string
+        pdf_file = io.BytesIO(pdf_content)
+        reader = PdfReader(pdf_file)
+        for page in reader.pages:
+                text += page.extract_text() or ""
+        return text
 
     def _generate_summary(self, text: str) -> str:
         return "Resumen generado por IA (implementación pendiente)"
