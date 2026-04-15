@@ -21,12 +21,9 @@ def browse_pdf() -> Optional[UploadFile]:
 
     upload_file = UploadFile(
         filename=filename.split("/")[-1],
-        file=BytesIO(content),
-        content_type="application/pdf"
+        file=BytesIO(content)
     )
     return upload_file
-
-
 
 def main():
     #Creación y definicion de ventana
