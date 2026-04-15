@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from api.router import router
+import interfaz
 
 app = FastAPI(
     title="PDF Extractext",
@@ -17,3 +18,6 @@ async def root():
         "docs": "/docs",
         "version": "1.0.0",
     }
+
+
+interfaz.main()
