@@ -29,8 +29,6 @@ def browse_pdf() -> Optional[UploadFile]:
 
     return upload_file
 
-
-
 def main():
     #Creación y definicion de ventana
     window = tk.Tk()
