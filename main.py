@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from api.router import router
-import interfaz
+from services import interfaz
 
 app = FastAPI(
     title="PDF Extractext",

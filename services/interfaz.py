@@ -3,7 +3,10 @@ from tkinter import filedialog
 from io import BytesIO
 from typing import Optional
 from fastapi import UploadFile
+from pdf_service import PDFService
 
+
+johnny = PDFService()
 
 # Función busqueda de archivos
 def browse_pdf() -> Optional[UploadFile]:
@@ -21,9 +24,9 @@ def browse_pdf() -> Optional[UploadFile]:
 
     upload_file = UploadFile(
         filename=filename.split("/")[-1],
-        file=BytesIO(content),
-        content_type="application/pdf"
+        file=BytesIO(content)
     )
+
     return upload_file
 
 
@@ -70,7 +73,3 @@ def main():
 
     window.mainloop()
     return uploaded_file
-
-
-if __name__ == "__main__":
-    main()
