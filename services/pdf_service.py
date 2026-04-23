@@ -1,21 +1,33 @@
+
 from pypdf import PdfReader
-import io
+from io import BytesIO
+from typing import Optional
+from models.schemas import PDFExportResponse, PDFSummaryResponse
+
 
 class PDFService:
+
     def __init__(self):
         pass
 
-    def extract_text(self, pdf_content: bytes) -> str:
-        text = ""
-        ## Buffer para los bytes y con PdfReader transformo las páginas a un string
-        pdf_file = io.BytesIO(pdf_content)
-        reader = PdfReader(pdf_file)
-        for page in reader.pages:
-                text += page.extract_text() or ""
-        return text
+    def _extract_text_from_pdf_stream(self, pdf_content: bytes) -> str:
+        
+        pdf_stream = BytesIO(pdf_content)
+        pdf_reader = PdfReader(pdf_stream)
 
-    def export_text():
-         pass
+        extracted_text = self._process_all_pages(pdf_reader)
+        return extracted_text
 
-    def _generate_summary(self, text: str) -> str:
-        return "Resumen generado por IA (implementación pendiente)"
+    def _process_all_pages(self, pdf_reader: PdfReader) -> str:
+        extracted_text = ""
+        for page in pdf_reader.pages:
+            page_text = page.extract_text()
+            if page_text:
+                extracted_text += page_text
+
+        return extracted_text
+
+
+    async def export_text_content(self, text: str, filename: str) -> PDFExportResponse:
+        ##todavia no se hace
+        pass

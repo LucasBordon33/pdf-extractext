@@ -1,8 +1,9 @@
 from fastapi import FastAPI
 from api.router import router
-from services.interfaz import Interfaz
+from services.gui_service import GUIService
 
-interfaz_manager = Interfaz()
+
+gui_serv = GUIService()
 
 
 # Informacion para documentacion automatica con FastAPI
@@ -24,5 +25,4 @@ async def root():
         "version": "1.0.0",
     }
 
-
-interfaz_manager.panel_runner()
+gui_serv.launch_main_window()
