@@ -64,7 +64,6 @@ class GUIService:
         browse_button = self._create_browse_button(window, file_label)
 
         self._create_action_button(window, "Exportar texto", self._export_text, 3)
-        self._create_action_button(window, "Resumen", self._generate_summary, 4)
         self._create_exit_button(window, 5)
 
         file_label.grid(column=1, row=1, pady=20)

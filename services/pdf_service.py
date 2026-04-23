@@ -2,7 +2,6 @@
 from pypdf import PdfReader
 from io import BytesIO
 from typing import Optional
-from models.schemas import PDFExportResponse, PDFSummaryResponse
 
 
 class PDFService:
@@ -28,6 +27,6 @@ class PDFService:
         return extracted_text
 
 
-    async def export_text_content(self, text: str, filename: str) -> PDFExportResponse:
+    async def export_text_content(self, text: str, filename: str):
         ##todavia no se hace
         pass
