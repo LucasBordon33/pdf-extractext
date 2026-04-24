@@ -13,7 +13,6 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Agrega las rutas de la API a router
 app.include_router(router)
 
 # Mensaje bienvenida 
