@@ -1,6 +1,10 @@
 ## proyecto pdf-extractect
 Extraer texto de un PDF proporcionado por el usuario. Hacer un resumen de dicho texto utilizando modelo IA.
 
+## Método de uso
+- Instalar las dependencias correspondientes
+- Correr el archivo main.py
+
 ## tecnologias
 
 * Python
