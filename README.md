@@ -1,7 +1,7 @@
 ## Alumnos
--Bordón Lucas
--Bordón Matías
--Juan Andrés López
+- Bordón Lucas
+- Bordón Matías
+- Juan Andrés López
 
 ## proyecto pdf-extractect
 Extraer texto de un PDF proporcionado por el usuario. Hacer un resumen de dicho texto utilizando modelo IA.
