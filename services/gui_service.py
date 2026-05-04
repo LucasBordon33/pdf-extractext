@@ -40,7 +40,6 @@ class GUIService:
         self.current_file_path = file_path
         try:
             self.current_pdf_text = self.extract_pdf_content(file_path)
-            print(self.current_pdf_text)
             file_label.configure(text=f"Archivo: {file_path.name}")
         except Exception as e:
             self.show_error_message(str(e))
