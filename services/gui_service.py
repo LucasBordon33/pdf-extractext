@@ -44,7 +44,7 @@ class GUIService:
         except Exception as e:
             self.show_error_message(str(e))
 
-    def export_text(self) -> None:
+    def export_text(self):
         if not self.current_file_path:
             self.show_info_message("No hay archivo seleccionado")
             return

@@ -46,7 +46,7 @@ class GUICreator:
         button = tk.Button(
             window,
             text=text,
-            command=command if self.service.current_file_path else placeholder,
+            command=command
         )
         button.grid(column=1, row=row, pady=10)
         return button

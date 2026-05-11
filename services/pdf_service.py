@@ -1,7 +1,6 @@
 
 from pypdf import PdfReader
 from io import BytesIO
-from typing import Optional
 
 
 class PDFService:
