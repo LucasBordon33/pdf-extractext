@@ -10,9 +10,6 @@ def get_all_pdfs():
         raise HTTPException(status_code=500, detail="Error al obtener los PDFs")
 
 def create_new_pdf(pdf: PDF):
-    if not pdf.name:
-        raise HTTPException(status_code=400, detail="El nombre es obligatorio")
-    
     pdf_id = pdf_model.create_pdf(pdf)
     return {"id": pdf_id, "msg": "Creado exitosamente"}
 

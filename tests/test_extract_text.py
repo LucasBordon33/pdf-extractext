@@ -21,9 +21,13 @@ class TestPDFService(unittest.TestCase):
         self.assertEqual(texto, "")
 
     def test_pdf_invalido(self):
-        ## se fija si cuando no es un PDF no explota
-        with self.assertRaises(Exception):
-            self.service._extract_text(b"contenido que no es un PDF")
+        #Verifica que el PDF esté bien generado
+     contenido_basura = b"Este es un texto plano, no un PDF"
+    
+     with self.assertRaises(ValueError) as context:
+        self.service._extract_text_from_pdf_stream(contenido_basura)
+    
+     self.assertIn("No se pudo leer el archivo como PDF", str(context.exception))
 
 if __name__ == "__main__":
     unittest.main()
