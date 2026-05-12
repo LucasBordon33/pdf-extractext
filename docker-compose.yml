@@ -1,18 +1,32 @@
+# Informa a docker sobre los contenedores que se quieren "levantar".
 services:
+# Define el primer servicio, el contenedor "app".
   app:
     build:
       context: .
       dockerfile: Dockerfile
       target: runner
+    # Todo este bloque le dice a Docker cómo fabricar la imagen. 
+    # - context: ".": Busca los archivos en esta misma carpeta.
+    # - dockerfile: Usa el archivo llamado "Dockerfile".
+    # - target: "runner": Le dice que solo construya hasta la etapa limpia y descarte el "builder".
+
+    # Le pone un nombre fijo al contenedor para evitar un nombre default largo.
     container_name: pdf-extractext
     ports:
+    # Conecta el puerto 8000 de la PC anfitriona (izq) con el puerto 8000 del contenedor (der).
       - "8000:8000"
     # SOLO EN ETAPA DE DESARROLLO
+    # Sincroniza la carpeta actual de tu PC (".") con la carpeta "/app" del contenedor para ver cambios en vivo.
     volumes: 
       - .:/app 
+
+    # Sobreescribe el CMD que había en el Dockerfile. Le agregamos el "--reload" para que se reinicie solo al guardar cambios en el código.
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     networks:
       - pdf-extractext-network
+    # Conecta este contenedor a una red WiFi interna privada (que creamos más abajo) para que pueda hablar con la base de datos de forma segura.
+
     #env_file:
     #  - .env
     #environment:
@@ -44,3 +58,6 @@ services:
 networks:
   pdf-extractext-network:
     driver: bridge
+# Crea la red interna privada que mencionamos arriba. 
+# El modo "bridge" (puente) permite que los contenedores se comuniquen entre sí usando su nombre 
+# (ej: tu app puede conectarse a la URL "http://mongodb:27017") en lugar de usar números IP.
