@@ -1,0 +1,32 @@
+# Dependencias y entornos
+.venv/
+__pycache__/
+*.pyc
+.uv/
+.env
+
+# Git y documentacion
+.github/
+.gitignore
+.git/
+README.md
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Tests y cobertura
+tests/
+.coverage
+htmlcov/
+.pytest_cache/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
