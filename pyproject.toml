@@ -9,5 +9,6 @@ dependencies = [
     "uvicorn[standard]>=0.44.0",
     "pypdf == 6.10.0",
     "pymongo>= 4.7.0",
-    "dnspython >= 2.8.0"
+    "dnspython >= 2.8.0",
+    "python-dotenv >= 1.1.0"
 ]
