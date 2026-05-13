@@ -2,6 +2,7 @@ import unittest
 from fastapi import UploadFile
 from controllers.pdf_controller import PDFController
 from services.pdf_service import PDFService
+from models.pdf import PDF
 from repositories.pdf_repository import PDFRepository
 
 class TestPDFController(unittest.IsolatedAsyncioTestCase):
