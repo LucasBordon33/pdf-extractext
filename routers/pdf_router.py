@@ -1,25 +1,30 @@
-from fastapi import APIRouter, status
-from controllers import pdf_controller
+from fastapi import APIRouter, status, UploadFile, File
+from controllers.pdf_controller import PDFController
 from models.pdf import PDF
 
-router = APIRouter(prefix="/api/v1", tags=["crud"])
+class PDFRouter:
+    def __init__(self):
+        self.router = APIRouter(prefix="/api/v1", tags=["pdfs"])
+        self._add_routes()
+        self.pdf_controller = PDFController()
 
+    def _add_routes(self):
+        @self.router.get("/pdfs")
+        def read():
+            return self.pdf_controller.get_all_pdfs()
 
-@router.post("/pdfs", status_code=status.HTTP_201_CREATED)
-def create(pdf: PDF):
-    return pdf_controller.create_new_pdf(pdf)
+        @self.router.put("/pdfs/{pdf_id}")
+        def update(pdf_id: str, pdf: PDF):
+            return self.pdf_controller.update_existing_pdf(pdf_id, pdf)
 
+        @self.router.delete("/pdfs/{pdf_id}", status_code=status.HTTP_204_NO_CONTENT)
+        def delete(pdf_id: str):
+            self.pdf_controller.delete_existing_pdf(pdf_id)
 
-@router.get("/pdfs")
-def read():
-    return pdf_controller.get_all_pdfs()
+        @self.router.post("/upload", status_code=status.HTTP_201_CREATED)
+        async def upload_pdf(file: UploadFile = File(...)):
+            return await self.pdf_controller.upload_pdf(file)
 
-
-@router.put("/pdfs/{pdf_id}")
-def update(pdf_id: str, pdf: PDF):
-    return pdf_controller.update_existing_pdf(pdf_id, pdf)
-
-
-@router.delete("/pdfs/{pdf_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete(pdf_id: str):
-    pdf_controller.delete_existing_pdf(pdf_id)
+        @self.router.get("/health")
+        def health_check():
+            return {"status": "healthy", "service": "pdf-extractext"}

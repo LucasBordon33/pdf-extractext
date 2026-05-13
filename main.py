@@ -1,27 +1,13 @@
 from fastapi import FastAPI
-from api.router import router
-from services.gui_service import GUIService
+from routers.pdf_router import PDFRouter
 
+# Crear aplicación FastAPI
+app = FastAPI(title="PDF Extractext API", version="1.0.0")
 
-gui_serv = GUIService()
+# Instanciar y registrar routers
+pdf_router = PDFRouter()
+app.include_router(pdf_router.router)
 
-
-# Informacion para documentacion automatica con FastAPI
-app = FastAPI(
-    title="PDF Extractext",
-    description="API para extraer texto de PDFs y generar resúmenes con IA",
-    version="1.0.0",
-)
-
-app.include_router(router)
-
-# Mensaje bienvenida 
-@app.get("/")
-async def root():
-    return {
-        "message": "Bienvenido a PDF Extractext",
-        "docs": "/docs",
-        "version": "1.0.0",
-    }
-
-gui_serv.launch_main_window()
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

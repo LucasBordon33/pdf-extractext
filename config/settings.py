@@ -6,6 +6,8 @@ load_dotenv()
 
 user = os.getenv("MONGO_USER")
 password = os.getenv("MONGO_PASS")
+host = os.getenv("MONGO_HOST", "localhost")
+port = os.getenv("MONGO_PORT", "27017")
 
 if not user or not password:
     raise ValueError(
@@ -13,7 +15,7 @@ if not user or not password:
         "Creá un archivo .env en la raíz del proyecto basado en .env.example"
     )
 
-uri = f"mongodb+srv://{user}:{password}@pdf-extractext.crqbr3j.mongodb.net/?appName=PDF-Extractext"
+uri = f"mongodb://{user}:{password}@{host}:{port}/"
 
 client = MongoClient(uri)
 db = client["PDF-Extractext"]
