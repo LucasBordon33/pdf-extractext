@@ -457,6 +457,7 @@ dependencies = [
     { name = "fastapi", extra = ["standard"] },
     { name = "pymongo" },
     { name = "pypdf" },
+    { name = "python-dotenv" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -466,6 +467,7 @@ requires-dist = [
     { name = "fastapi", extras = ["standard"], specifier = ">=0.135.3" },
     { name = "pymongo", specifier = ">=4.7.0" },
     { name = "pypdf", specifier = "==6.10.0" },
+    { name = "python-dotenv", specifier = ">=1.1.0" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.44.0" },
 ]
 

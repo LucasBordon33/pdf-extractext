@@ -53,7 +53,7 @@ services:
      restart: unless-stopped
 
   volumes:
-   mongodb_data:
+    mongodb_data:
 
 networks:
   pdf-extractext-network:
