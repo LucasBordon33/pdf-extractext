@@ -6,7 +6,7 @@ load_dotenv()
 
 user = os.getenv("MONGO_USER")
 password = os.getenv("MONGO_PASS")
-host = os.getenv("MONGO_HOST", "localhost")
+host = os.getenv("MONGO_HOST", "mongodb")
 port = os.getenv("MONGO_PORT", "27017")
 
 if not user or not password:

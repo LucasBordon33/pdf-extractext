@@ -29,9 +29,9 @@ services:
 
     #env_file:
     #  - .env
-    #environment:
-    #  - MONGO_USER=${MONGO_USER}
-    #  - MONGO_PASS=${MONGO_PASS}
+    environment:
+      - MONGO_USER=${MONGO_USER}
+      - MONGO_PASS=${MONGO_PASS}
       
     # Si necesitas MongoDB Atlas (comentar las lineas siguientes):
     depends_on:
