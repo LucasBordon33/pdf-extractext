@@ -34,8 +34,8 @@ services:
     #  - MONGO_PASS=${MONGO_PASS}
       
     # Si necesitas MongoDB Atlas (comentar las lineas siguientes):
-    # depends_on:
-    #   - mongodb
+    depends_on:
+       - mongodb
     # Y descomenta el servicio de mongodb mas abajo
 
   mongodb:
@@ -52,7 +52,7 @@ services:
        - pdf-extractext-network
      restart: unless-stopped
 
-  volumes:
+volumes:
     mongodb_data:
 
 networks:

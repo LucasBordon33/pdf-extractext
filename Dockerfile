@@ -10,6 +10,9 @@ WORKDIR /app
 # .dockerignore evita que copiemos cosas innecesarias o privadas
 COPY . .
 
+# Le decimos a uv dónde debe crear el entorno virtual desde el inicio. 
+ENV UV_PROJECT_ENVIRONMENT="/opt/venv"
+
 # Ejecuta la instalación de las librerías de Python.
 # Frozen le dice que respete estrictamente el archivo uv.lock para que no instale versiones sorpresa.
 # --no--dev evita instalar herramientas de desarrollo (como librerías de testing) para ahorrar espacio.
@@ -22,20 +25,20 @@ FROM python:3.12-slim-bookworm AS runner
 WORKDIR /app
 
 # 1. Traemos el entorno virtual ya hecho desde el builder
-COPY --from=builder /app/.venv /app/.venv
+COPY --from=builder /opt/venv /opt/venv
 
 # 2. Copiamos el código fuente de nuestra PC al runner
 # (Nuevamente, el .dockerignore evita que se copie basura)
 COPY . .
 
 # "Activa" el entorno virtual de forma automática. Le dice al Linux interno que busque primero en .venv cuando ejecute python
-ENV PATH="/app/.venv/bin:${PATH}"
+ENV PATH="/opt/venv/bin:${PATH}"
 
 # Le prohíbe a Python generar esos archivos ocultos .pyc que en un contenedor son inútiles y solo ocupan espacio.
 ENV PYTHONDONTWRITEBYTECODE=1
 
 # Fuerza a que todos los mensajes de la consola (como los print() o los errores) 
-# Se muestren instantáneamente en tu pantalla sin quedarse atascados en la memoria intermedia de Linux.
+# Se muestren instantá  neamente en tu pantalla sin quedarse atascados en la memoria intermedia de Linux.
 ENV PYTHONUNBUFFERED=1
 
 # Le avisa a quien lea el archivo que esta aplicación tiene la intención de comunicarse por el puerto 8000 (Solo informativo)
