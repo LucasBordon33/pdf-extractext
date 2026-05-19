@@ -1,36 +1,45 @@
+import hashlib
 from bson import ObjectId
 from config.settings import db
 from models.pdf import PDF
 
-class PDFRepository():
 
+class PDFRepository:
     def __init__(self):
         pass
 
-    def _serialize_pdf(self,doc):
-     doc["id"] = str(doc.pop("_id"))
-     return doc
+    def _serialize_pdf(self, doc):
+        doc["id"] = str(doc.pop("_id"))
+        return doc
+
+    @staticmethod
+    def generate_checksum(data: str) -> str:
+        return hashlib.sha256(data.encode("utf-8")).hexdigest()
+
+    @staticmethod
+    def verify_checksum(data: str, expected_checksum: str) -> bool:
+        return PDFRepository.generate_checksum(data) == expected_checksum
 
     def get_pdfs(self):
-     return [self._serialize_pdf(doc) for doc in db["pdfs"].find()]
+        return [self._serialize_pdf(doc) for doc in db["pdfs"].find()]
 
-    def create_pdf(self,pdf: PDF):
-     result = db["pdfs"].insert_one(pdf.model_dump(exclude={"id"}))
-     return str(result.inserted_id)
+    def create_pdf(self, pdf: PDF):
+        result = db["pdfs"].insert_one(pdf.model_dump(exclude={"id"}))
+        return str(result.inserted_id)
 
-    def get_pdf_by_id(self,pdf_id: str):
-     doc = db["pdfs"].find_one({"_id": ObjectId(pdf_id)})
-     if doc:
-        return self._serialize_pdf(doc)
-     return None
+    def get_pdf_by_id(self, pdf_id: str):
+        doc = db["pdfs"].find_one({"_id": ObjectId(pdf_id)})
+        if doc:
+            return self._serialize_pdf(doc)
+        return None
 
-    def update_pdf(self,pdf_id: str, pdf: PDF):
-     db["pdfs"].update_one(
-        {"_id": ObjectId(pdf_id)}, {"$set": pdf.model_dump(exclude={"id"})}
-     )
-     return {"msg": "PDF actualizado"}
+    def update_pdf(self, pdf_id: str, pdf: PDF):
+        db["pdfs"].update_one(
+            {"_id": ObjectId(pdf_id)}, {"$set": pdf.model_dump(exclude={"id"})}
+        )
+        return {"msg": "PDF actualizado"}
 
-    def delete_pdf(self,pdf_id: str):
-     db["pdfs"].delete_one({"_id": ObjectId(pdf_id)})
-     return {"msg": "PDF borrado"}
+    def delete_pdf(self, pdf_id: str):
+        db["pdfs"].delete_one({"_id": ObjectId(pdf_id)})
+        return {"msg": "PDF borrado"}
 
