@@ -7,8 +7,9 @@
 Extraer texto de un PDF proporcionado por el usuario. Hacer un resumen de dicho texto utilizando modelo IA.
 
 ## Método de uso
-- Instalar las dependencias correspondientes
-- Correr el archivo main.py
+-Iniciar el contenedor Docker, instalando las dependencias necesarias
+-Una vez inicializado, realizar peticiones al servidor levantado. Desde una terminal de Linux, se hace utilizando el comando curl.
+-Las rutas aceptadas son GET, PUT, POST y DELETE. Ejemplo: curl -X GET "http://localhost:8000/api/v1/pdfs" -H "accept: application/json"
 
 ## tecnologias
 
