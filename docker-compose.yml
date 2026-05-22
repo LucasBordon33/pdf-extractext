@@ -30,9 +30,8 @@ services:
       - pdf-extractext-network
     # Conecta este contenedor a una red WiFi interna privada (que creamos más abajo) para que pueda hablar con la base de datos de forma segura.
 
-    env_file:
-      - .env
-
+    #env_file:
+    #  - .env
     environment:
       - MONGO_USER=${MONGO_USER}
       - MONGO_PASS=${MONGO_PASS}

@@ -1,58 +1,53 @@
 import hashlib
 from bson import ObjectId
+from config.settings import db
 from models.pdf import PDF
 
 
 class PDFRepository:
-    def __init__(self, db=None):
-        if db is None:
-            from config.settings import db as _db
-            db = _db
-        self.db = db
+    def __init__(self):
+        pass
 
     def _serialize_pdf(self, doc):
         doc["id"] = str(doc.pop("_id"))
         return doc
 
-    def is_duplicate(self, checksum: str) -> bool:
-        if self.db is None:
-            raise RuntimeError("Database connection not available")
-        return self.db["pdfs"].find_one({"checksum": checksum}) is not None
+    @staticmethod
+    def generate_checksum(data: bytes) -> str:
+        return hashlib.sha256(data).hexdigest()
 
+    @staticmethod
+    def generate_checksum_from_text(data: str) -> str:
+        return hashlib.sha256(data.encode("utf-8")).hexdigest()
+
+    def verify_checksum(self, pdf_id: str, data: bytes) -> bool:
+        doc = self.get_pdf_by_id(pdf_id)
+        if not doc or "checksum" not in doc:
+            return False
+        expected_checksum = doc["checksum"]
+        actual_checksum = self.generate_checksum(data)
+        return actual_checksum == expected_checksum
 
     def get_pdfs(self):
-        if self.db is None:
-            return []
-        return [self._serialize_pdf(doc) for doc in self.db["pdfs"].find()]
+        return [self._serialize_pdf(doc) for doc in db["pdfs"].find()]
 
     def create_pdf(self, pdf: PDF):
-        if self.db is None:
-            raise RuntimeError("Database connection not available")
-        if self.is_duplicate(pdf.checksum) == False:
-         result = self.db["pdfs"].insert_one(pdf.model_dump(exclude={"id"}))
-         return str(result.inserted_id)
-        else:
-            return {"error": "El archivo ya existe en la base de datos"}
+        result = db["pdfs"].insert_one(pdf.model_dump(exclude={"id"}))
+        return str(result.inserted_id)
 
     def get_pdf_by_id(self, pdf_id: str):
-        if self.db is None:
-            return None
-        doc = self.db["pdfs"].find_one({"_id": ObjectId(pdf_id)})
+        doc = db["pdfs"].find_one({"_id": ObjectId(pdf_id)})
         if doc:
             return self._serialize_pdf(doc)
         return None
 
     def update_pdf(self, pdf_id: str, pdf: PDF):
-        if self.db is None:
-            raise RuntimeError("Database connection not available")
-        self.db["pdfs"].update_one(
-            {"_id": ObjectId(pdf_id)}, { "$set": pdf.model_dump(exclude={"id"})}
+        db["pdfs"].update_one(
+            {"_id": ObjectId(pdf_id)}, {"$set": pdf.model_dump(exclude={"id"})}
         )
-        # Return updated document so tests can verify
-        return self.get_pdf_by_id(pdf_id)
+        return {"msg": "PDF actualizado"}
 
     def delete_pdf(self, pdf_id: str):
-        if self.db is None:
-            raise RuntimeError("Database connection not available")
-        self.db["pdfs"].delete_one({"_id": ObjectId(pdf_id)})
+        db["pdfs"].delete_one({"_id": ObjectId(pdf_id)})
         return {"msg": "PDF borrado"}
+
