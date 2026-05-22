@@ -13,7 +13,7 @@ services:
       dockerfile: Dockerfile
       target: runner
     #Le dice a Docker que imagen usar
-    image: pdf-extractext:1.0.1
+    image: pdf-extractext:1.0.0
     # Le pone un nombre fijo al contenedor para evitar un nombre default largo.
     container_name: pdf-extractext
     ports:
