@@ -13,12 +13,20 @@ class PDFRepository:
         return doc
 
     @staticmethod
-    def generate_checksum(data: str) -> str:
-        return hashlib.sha256(data.encode("utf-8")).hexdigest()
+    def generate_checksum(data: bytes) -> str:
+        return hashlib.sha256(data).hexdigest()
 
     @staticmethod
-    def verify_checksum(data: str, expected_checksum: str) -> bool:
-        return PDFRepository.generate_checksum(data) == expected_checksum
+    def generate_checksum_from_text(data: str) -> str:
+        return hashlib.sha256(data.encode("utf-8")).hexdigest()
+
+    def verify_checksum(self, pdf_id: str, data: bytes) -> bool:
+        doc = self.get_pdf_by_id(pdf_id)
+        if not doc or "checksum" not in doc:
+            return False
+        expected_checksum = doc["checksum"]
+        actual_checksum = self.generate_checksum(data)
+        return actual_checksum == expected_checksum
 
     def get_pdfs(self):
         return [self._serialize_pdf(doc) for doc in db["pdfs"].find()]
