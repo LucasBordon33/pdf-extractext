@@ -1,5 +1,6 @@
 from fastapi import HTTPException, UploadFile
 from services.pdf_service import PDFService
+from services.pdf_validator import PDFValidator
 from repositories.pdf_repository import PDFRepository
 from models.pdf import PDF
 
@@ -8,19 +9,12 @@ class PDFController:
     def __init__(self):
         self.pdf_service = PDFService()
         self.pdf_repository = PDFRepository()
+        self.pdf_validator = PDFValidator()
 
-    async def upload_pdf(self, file: UploadFile):
-        # Verifica que el archivo sea PDF
-        if not file.filename.endswith(".pdf"):
-            raise HTTPException(status_code=400, detail="Solo se permiten archivos PDF")
-
-        # Verifica los primeros bytes del archivo para confirmar que es un PDF real
-        file_header = await file.read(5)
-        await file.seek(0)  # Resetea la posición del archivo para que se pueda procesar después
-        if not file_header.startswith(b"%PDF-"):
-            raise HTTPException(
-                status_code=400, detail="El archivo no es un PDF válido"
-            )
+    async def upload_pdf(self, file: UploadFile):        
+        response = await self.pdf_validator._validate_is_pdf(file)
+        if response != "":
+            raise HTTPException(status_code=400, detail=response)
         try:
             # Crea el PDF y lo guarda
             result = await self.pdf_service.process_pdf(file)
