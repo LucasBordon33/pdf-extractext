@@ -22,7 +22,6 @@ class PDFController:
                 status_code=400, detail="El archivo no es un PDF válido"
             )
         try:
-            ## en este bloque iría el CHECKSUM, <- IMPORTANTE
             # Crea el PDF y lo guarda
             result = await self.pdf_service.process_pdf(file)
             pdf = PDF(name=result["filename"], text=result["text"])

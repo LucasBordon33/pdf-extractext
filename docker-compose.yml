@@ -2,15 +2,18 @@
 services:
 # Define el primer servicio, el contenedor "app".
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: runner
+  
     # Todo este bloque le dice a Docker cómo fabricar la imagen. 
     # - context: ".": Busca los archivos en esta misma carpeta.
     # - dockerfile: Usa el archivo llamado "Dockerfile".
     # - target: "runner": Le dice que solo construya hasta la etapa limpia y descarte el "builder".
 
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    #Le dice a Docker que imagen usar
+    image: pdf-extractext:1.0.0
     # Le pone un nombre fijo al contenedor para evitar un nombre default largo.
     container_name: pdf-extractext
     ports:
