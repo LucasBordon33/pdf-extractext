@@ -18,9 +18,9 @@ class PDFController:
         try:
             # Crea el PDF y lo guarda
             result = await self.pdf_service.process_pdf(file)
-            pdf = PDF(name=result["filename"], text=result["text"])
+            pdf = PDF(name=result["filename"], text=result["text"],checksum=result["checksum"])
             pdf_id = self.pdf_repository.create_pdf(pdf)
-            return {"id": pdf_id, "filename": result["filename"]}
+            return {"id": pdf_id, "filename": result["filename"], "checksum":result["checksum"]}
         except Exception as e:
             raise HTTPException(
                 status_code=500, detail=f"Error al procesar PDF: {str(e)}"
