@@ -41,6 +41,10 @@ ENV PYTHONDONTWRITEBYTECODE=1
 # Se muestren instantá  neamente en tu pantalla sin quedarse atascados en la memoria intermedia de Linux.
 ENV PYTHONUNBUFFERED=1
 
+# Creamos un usuario no root para evitar escalados de privilegios
+RUN useradd --create-home appuser
+USER appuser
+
 # Le avisa a quien lea el archivo que esta aplicación tiene la intención de comunicarse por el puerto 8000 (Solo informativo)
 EXPOSE 8000
 
