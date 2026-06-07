@@ -14,12 +14,12 @@ class PDFRouter:
             return self.pdf_controller.get_all_pdfs()
 
         @self.router.put("/pdfs/{pdf_id}")
-        def update(pdf_id: str, pdf: PDF):
-            return self.pdf_controller.update_existing_pdf(pdf_id, pdf)
-
+        async def update(pdf_id: str, file: UploadFile = File(...)):
+         return await self.pdf_controller.update_existing_pdf(pdf_id, file)
+        
         @self.router.delete("/pdfs/{pdf_id}", status_code=status.HTTP_204_NO_CONTENT)
         def delete(pdf_id: str):
-            self.pdf_controller.delete_existing_pdf(pdf_id)
+            return self.pdf_controller.delete_existing_pdf(pdf_id)
 
         @self.router.post("/upload", status_code=status.HTTP_201_CREATED)
         async def upload_pdf(file: UploadFile = File(...)):
