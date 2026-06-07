@@ -1,7 +1,7 @@
 import hashlib
 from bson import ObjectId
 from models.pdf import PDF
-
+from bson.errors import InvalidId
 
 class PDFRepository:
     def __init__(self, db=None):
@@ -32,31 +32,50 @@ class PDFRepository:
     def create_pdf(self, pdf: PDF):
         if self.db is None:
             raise RuntimeError("Database connection not available")
-        if self.is_duplicate(pdf.checksum) == False:
-         result = self.db["pdfs"].insert_one(pdf.model_dump(exclude={"id"}))
-         return str(result.inserted_id)
-        else:
-            return {"El PDF ya se encuentra repetido en la base de datos."}
+        
+        result = self.db["pdfs"].insert_one(pdf.model_dump(exclude={"id"}))
+        return str(result.inserted_id)
+        
+        
 
     def get_pdf_by_id(self, pdf_id: str):
-        if self.db is None:
-            return None
-        doc = self.db["pdfs"].find_one({"_id": ObjectId(pdf_id)})
-        if doc:
-            return self._serialize_pdf(doc)
+     if self.db is None:
         return None
+     try:
+        doc = self.db["pdfs"].find_one({"_id": ObjectId(pdf_id)})
+     except InvalidId:
+        return None
+     if doc:
+        return self._serialize_pdf(doc)
+     return None
 
-    def update_pdf(self, pdf_id: str, pdf: PDF):
-        if self.db is None:
-            raise RuntimeError("Database connection not available")
-        self.db["pdfs"].update_one(
-            {"_id": ObjectId(pdf_id)}, { "$set": pdf.model_dump(exclude={"id"})}
-        )
-        # Return updated document so tests can verify
-        return self.get_pdf_by_id(pdf_id)
+    def update_pdf(self, pdf_id: str, pdf: PDF) -> dict | None:
+     if self.db is None:
+        raise RuntimeError("Database connection not available")
 
-    def delete_pdf(self, pdf_id: str):
-        if self.db is None:
-            raise RuntimeError("Database connection not available")
-        self.db["pdfs"].delete_one({"_id": ObjectId(pdf_id)})
-        return {"msg": "PDF borrado"}
+     if self.is_duplicate(pdf.checksum):
+        return {
+            "status": "error",
+            "message": "El PDF ya se encuentra repetido en la base de datos."
+        }
+
+     result = self.db["pdfs"].update_one(
+        {"_id": ObjectId(pdf_id)},
+        {"$set": pdf.model_dump(exclude={"id"})}
+     )
+
+     if result.matched_count == 0:
+        return None  
+
+     updated_doc = self.db["pdfs"].find_one({"_id": ObjectId(pdf_id)})
+     return self._serialize_pdf(updated_doc)
+
+
+    def delete_pdf(self, pdf_id: str) -> dict | None:
+     if self.db is None:
+        raise RuntimeError("Database connection not available")
+
+     result = self.db["pdfs"].delete_one({"_id": ObjectId(pdf_id)})
+     if result.deleted_count == 0:
+        return None 
+     return {"status": "success", "id": pdf_id, "message": "PDF eliminado correctamente"}
