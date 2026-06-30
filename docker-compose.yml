@@ -1,66 +1,87 @@
 # Informa a docker sobre los contenedores que se quieren "levantar".
-services:
-# Define el primer servicio, el contenedor "app".
-  app:
-  
-    # Todo este bloque le dice a Docker cómo fabricar la imagen. 
-    # - context: ".": Busca los archivos en esta misma carpeta.
-    # - dockerfile: Usa el archivo llamado "Dockerfile".
-    # - target: "runner": Le dice que solo construya hasta la etapa limpia y descarte el "builder".
+version: "3.9"
 
+services:
+  traefik:
+    image: traefik:v2.11
+    container_name: traefik
+    command:
+      - --api.insecure=true
+      - --api.dashboard=true
+      - --providers.docker=true
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --entrypoints.mongodb.address=:27017
+      - --certificatesresolvers.default.acme.tlschallenge=true
+      - --certificatesresolvers.default.acme.email=tuemail@ejemplo.com
+      - --certificatesresolvers.default.acme.storage=/letsencrypt/acme.json
+    ports:
+      - "80:80"
+      - "443:443"
+      - "27017:27017"
+    labels: 
+       - "traefik.enable=true"
+       - "traefik.http.routers.api.rule=Host(`traefik.universidad.localhost`)"
+       - "traefik.http.routers.api.service=api@internal"
+       - "traefik.http.routers.api.entrypoints=websecure"
+       - "traefik.http.routers.api.tls=true"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./certs:/certs
+      - ./letsencrypt:/letsencrypt
+    networks:
+      - pdf-extractext-network
+
+  app:
     build:
       context: .
       dockerfile: Dockerfile
       target: runner
-    #Le dice a Docker que imagen usar
     image: pdf-extractext:1.0.1
-    # Le pone un nombre fijo al contenedor para evitar un nombre default largo.
     container_name: pdf-extractext
-    ports:
-    # Conecta el puerto 8000 de la PC anfitriona (izq) con el puerto 8000 del contenedor (der).
-      - "8000:8000"
-    # SOLO EN ETAPA DE DESARROLLO
-    # Sincroniza la carpeta actual de tu PC (".") con la carpeta "/app" del contenedor para ver cambios en vivo.
-    volumes: 
-      - .:/app 
-
-    # Sobreescribe el CMD que había en el Dockerfile. Le agregamos el "--reload" para que se reinicie solo al guardar cambios en el código.
+    volumes:
+      - .:/app
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/config.yml:/etc/traefik/config.yml:ro
+      - ./certs:/etc/certs:ro
+      - ./letsencrypt:/letsencrypt
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     networks:
       - pdf-extractext-network
-    # Conecta este contenedor a una red WiFi interna privada (que creamos más abajo) para que pueda hablar con la base de datos de forma segura.
-
-    #env_file:
-    #  - .env
     environment:
       - MONGO_USER=${MONGO_USER}
       - MONGO_PASS=${MONGO_PASS}
-      
-    # Si necesitas MongoDB Atlas (comentar las lineas siguientes):
     depends_on:
-       - mongodb
-    # Y descomenta el servicio de mongodb mas abajo
+      - mongodb
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app.rule=Host(`universidad.localhost`)"
+      - "traefik.http.routers.app.entrypoints=websecure"
+      - "traefik.http.routers.app.tls=true"
+      - "traefik.http.services.app.loadbalancer.server.port=8000"
 
   mongodb:
-     image: mongo:7-jammy
-     container_name: pdf-extractext-mongodb
-     ports:
-       - "27017:27017"
-     environment:
-       - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER}
-       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASS}
-     volumes:
-       - mongodb_data:/data/db
-     networks:
-       - pdf-extractext-network
-     restart: unless-stopped
+    image: mongo:7-jammy
+    container_name: pdf-extractext-mongodb
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASS}
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - pdf-extractext-network
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.tcp.routers.mongo.rule=HostSNI(`mongo-express.universidad.localhost`)"
+      - "traefik.tcp.routers.mongo.entrypoints=mongodb"
+      - "traefik.tcp.routers.mongo.tls=true"
+      - "traefik.tcp.services.mongo.loadbalancer.server.port=27017"
 
 volumes:
-    mongodb_data:
+  mongodb_data:
 
 networks:
   pdf-extractext-network:
     driver: bridge
-# Crea la red interna privada que mencionamos arriba. 
-# El modo "bridge" (puente) permite que los contenedores se comuniquen entre sí usando su nombre 
-# (ej: tu app puede conectarse a la URL "http://mongodb:27017") en lugar de usar números IP.

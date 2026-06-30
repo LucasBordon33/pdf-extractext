@@ -1,0 +1,49 @@
+global:
+  sendAnonymousUsage: true
+
+api:
+  dashboard: true
+  insecure: true
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    watch: true
+    exposedByDefault: false
+
+  file:
+    filename: /etc/traefik/config.yml
+    watch: true
+
+log:
+  level: INFO
+  format: common
+
+entryPoints:
+  http:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: https
+          scheme: https
+
+  https:
+    address: ":443"
+
+  mongodb:
+    address: ":27017"
+
+  redis:
+    address: ":6379"
+
+  postgresql:
+    address: ":5432"
+
+certificatesResolvers:
+  mkcert:
+    acme:
+      caServer: "https://acme-v02.api.letsencrypt.org/directory"
+      email: "tuemail@ejemplo.com"
+      storage: "/letsencrypt/acme.json"
+      tlsChallenge: true
