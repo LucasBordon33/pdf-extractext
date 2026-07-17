@@ -6,17 +6,22 @@ from models.pdf import PDF
 import hashlib
 
 
+
+"""
+
+Servicio que maneja la lógica del negocio
+
+"""
+
 class PDFService:
     def __init__(self):
         self.repository = PDFRepository()
 
     async def process_pdf(self, file) -> Dict[str, Any]:
-        # Leer contenido del archivo
         content = await file.read()
-        # Calcular checksum del archivo PDF original
+
         checksum = self.calculate_checksum(content)
 
-        # Extraer texto
         extracted_text = self._extract_text_from_pdf_stream(content)
 
         return {"filename": file.filename, "text": extracted_text, "checksum": checksum}

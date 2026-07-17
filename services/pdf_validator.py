@@ -1,6 +1,13 @@
 import os
 
 
+"""
+
+Servicio que ayuda a la validación de archivos PDF
+
+"""
+
+
 class PDFValidator():
     def __init__(self):
         self.valid_size = int(os.getenv("MX_FILE_SIZE","10"))*1024*1024
