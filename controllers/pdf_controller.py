@@ -84,4 +84,4 @@ class PDFController:
             )
 
     async def _validate_file(self, file: UploadFile) -> None:
-        await self.pdf_validator._validate_is_pdf(file)
+        await self.pdf_validator.validate_is_pdf(file)

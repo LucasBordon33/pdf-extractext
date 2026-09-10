@@ -27,7 +27,7 @@ class PDFService:
         if self.is_duplicate(pdf_data.checksum):
             raise PDFRejectedException(PDF_REPEATED)
 
-        pdf_id = self.pdf_repository.create_pdf(pdf_data)
+        pdf_id = self.repository.create_pdf(pdf_data)
         return {
             "status": "success",
             "id": pdf_id,
@@ -45,7 +45,7 @@ class PDFService:
         if self.is_duplicate(pdf_data.checksum):
             raise PDFRejectedException(PDF_REPEATED)
 
-        updated = self.pdf_repository.update_pdf(pdf_id, pdf_data)
+        updated = self.repository.update_pdf(pdf_id, pdf_data)
         return {
             "status": "success",
             "id": pdf_id,
