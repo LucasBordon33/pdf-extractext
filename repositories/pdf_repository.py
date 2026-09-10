@@ -1,6 +1,7 @@
 from bson import ObjectId
 from bson.errors import InvalidId
 from models.pdf import PDF
+from config.exceptions import PDFNotFoundException
 
 
 class PDFRepository:
@@ -25,38 +26,40 @@ class PDFRepository:
         result = self.collection.insert_one(pdf.model_dump(exclude={"id"}))
         return str(result.inserted_id)
 
-    def get_pdf_by_id(self, pdf_id: str) -> dict | None:
+    def get_pdf_by_id(self, pdf_id: str) -> dict:
         try:
             doc = self.collection.find_one({"_id": ObjectId(pdf_id)})
-            return self._serialize_pdf(doc) if doc else None
+            if not doc:
+                raise PDFNotFoundException(f"PDF con id {pdf_id} no encontrado")
+            return self._serialize_pdf(doc)
         except InvalidId:
-            return None
+            raise PDFNotFoundException(f"PDF con id {pdf_id} no encontrado")
 
-    def update_pdf(self, pdf_id: str, pdf: PDF) -> dict | None:
+    def update_pdf(self, pdf_id: str, pdf: PDF) -> dict:
         try:
             result = self.collection.update_one(
                 {"_id": ObjectId(pdf_id)}, {"$set": pdf.model_dump(exclude={"id"})}
             )
             if result.matched_count == 0:
-                return None
+                raise PDFNotFoundException(f"PDF con id {pdf_id} no encontrado")
 
             updated_doc = self.collection.find_one({"_id": ObjectId(pdf_id)})
             return self._serialize_pdf(updated_doc) if updated_doc else None
         except InvalidId:
-            return None
+            raise PDFNotFoundException(f"PDF con id {pdf_id} no encontrado")
 
-    def delete_pdf(self, pdf_id: str) -> dict | None:
+    def delete_pdf(self, pdf_id: str) -> dict:
         try:
             result = self.collection.delete_one({"_id": ObjectId(pdf_id)})
             if result.deleted_count == 0:
-                return None
+                raise PDFNotFoundException(f"PDF con id {pdf_id} no encontrado")
             return {
                 "status": "success",
                 "id": pdf_id,
                 "message": "PDF eliminado correctamente",
             }
         except InvalidId:
-            return None
+            raise PDFNotFoundException(f"PDF con id {pdf_id} no encontrado")
 
     @staticmethod
     def _serialize_pdf(doc: dict) -> dict:

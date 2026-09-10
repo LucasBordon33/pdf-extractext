@@ -6,7 +6,7 @@ from services.pdf_service import PDFService
 class TestPDFService(unittest.TestCase):
     def setUp(self):
         self.mock_repo = MagicMock()
-        self.service = PDFService(pdf_repository=self.mock_repo)
+        self.service = PDFService(repository=self.mock_repo)
 
     @patch("services.pdf_service.PdfReader")
     def test_pdf_simple(self, mock_pdf_reader):

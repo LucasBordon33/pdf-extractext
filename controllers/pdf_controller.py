@@ -1,22 +1,30 @@
 from fastapi import HTTPException, UploadFile, status
 from services.pdf_service import PDFService
 from services.pdf_validator import PDFValidator
-from models.pdf import PDF
 from config.constants import PDF_NOT_FOUND, PDF_PROCESS_ERROR
+from config.exceptions import (
+    PDFNotFoundException,
+    PDFRejectedException,
+    PDFNotValidException,
+)
 
 
 class PDFController:
-    def __init__(self, pdf_service=None, pdf_validator=None):
-        self.pdf_service = pdf_service or PDFService()
+    def __init__(self, pdf_service=None, pdf_repository = None, pdf_validator=None):
+        self.pdf_service = pdf_service or PDFService(pdf_repository)
         self.pdf_validator = pdf_validator or PDFValidator()
 
     async def upload_pdf(self, file: UploadFile) -> dict:
-        await self._validate_file(file)
         try:
+            await self._validate_file(file)
             result = await self.pdf_service.upload_pdf(file)
             return result
-        except ValueError as e:
+        except PDFNotValidException as e:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        except PDFRejectedException as e:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        except PDFNotFoundException as e:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -25,7 +33,7 @@ class PDFController:
 
     def get_all_pdfs(self) -> dict:
         try:
-            pdfs = self.pdf_service.pdf_repository.get_pdfs()
+            pdfs = self.pdf_service.repository.get_pdfs()
             formatted = [
                 {
                     "id": pdf["id"],
@@ -48,17 +56,16 @@ class PDFController:
             )
 
     async def update_existing_pdf(self, pdf_id: str, file: UploadFile) -> dict:
-        self._ensure_pdf_exists(pdf_id)
-        await self._validate_file(file)
         try:
+            await self._validate_file(file)
             result = await self.pdf_service.update_pdf(pdf_id, file)
             return result
-        except ValueError as e:
-            if str(e) == PDF_NOT_FOUND:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND, detail=PDF_NOT_FOUND
-                )
+        except PDFNotValidException as e:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        except PDFRejectedException as e:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        except PDFNotFoundException as e:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -66,23 +73,15 @@ class PDFController:
             )
 
     def delete_existing_pdf(self, pdf_id: str) -> dict:
-        self._ensure_pdf_exists(pdf_id)
-        deleted = self.pdf_service.pdf_repository.delete_pdf(pdf_id)
-        if not deleted:
+        try:
+            deleted = self.pdf_service.repository.delete_pdf(pdf_id)
+            return deleted
+        except PDFNotFoundException as e:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        except Exception:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=PDF_NOT_FOUND
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=PDF_NOT_FOUND
             )
-        return deleted
 
     async def _validate_file(self, file: UploadFile) -> None:
-        error_msg = await self.pdf_validator._validate_is_pdf(file)
-        if error_msg:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg
-            )
-
-    def _ensure_pdf_exists(self, pdf_id: str) -> None:
-        if not self.pdf_service.pdf_repository.get_pdf_by_id(pdf_id):
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=PDF_NOT_FOUND
-            )
+        await self.pdf_validator._validate_is_pdf(file)

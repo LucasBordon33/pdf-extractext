@@ -1,17 +1,22 @@
 import unittest
 from unittest.mock import MagicMock, AsyncMock, patch
-from fastapi import UploadFile
+from fastapi import UploadFile, HTTPException 
 from controllers.pdf_controller import PDFController
+from config.exceptions import (
+    PDFNotFoundException,
+    PDFRejectedException,
+    PDFNotValidException,
+)
+
 
 
 class TestPDFController(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.mock_service = MagicMock()
-        self.mock_service.pdf_repository.get_pdfs.return_value = [
+        self.mock_service.repository.get_pdfs.return_value = [
             {"id": "1", "name": "test.pdf", "checksum": "abc", "text": "hola"}
         ]
-        self.mock_service.pdf_repository.get_pdf_by_id.return_value = None
-        self.mock_service.pdf_repository.delete_pdf.return_value = {
+        self.mock_service.repository.delete_pdf.return_value = {
             "status": "success",
             "id": "123",
             "message": "PDF eliminado correctamente",
@@ -26,16 +31,10 @@ class TestPDFController(unittest.IsolatedAsyncioTestCase):
             }
         )
         self.mock_service.update_pdf = AsyncMock(
-            return_value={
-                "status": "success",
-                "id": "123",
-                "filename": "nuevo.pdf",
-                "checksum": "def",
-                "message": "PDF actualizado correctamente",
-            }
+        side_effect=PDFNotFoundException("PDF no encontrado")
         )
         self.mock_validator = MagicMock()
-        self.mock_validator._validate_is_pdf = AsyncMock(return_value="")
+        self.mock_validator._validate_is_pdf = AsyncMock()
         self.controller = PDFController(
             pdf_service=self.mock_service,
             pdf_validator=self.mock_validator,
@@ -57,10 +56,9 @@ class TestPDFController(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["data"][0]["filename"], "test.pdf")
 
     async def test_update_existing_pdf_not_found(self):
-        self.mock_service.pdf_repository.get_pdf_by_id.return_value = None
         mock_file = MagicMock(spec=UploadFile)
         mock_file.read = AsyncMock(return_value=b"%PDF-1.4 test content")
-        with self.assertRaises(Exception):
+        with self.assertRaises(HTTPException):
             await self.controller.update_existing_pdf("fake_id", mock_file)
 
 

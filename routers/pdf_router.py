@@ -1,6 +1,5 @@
 from fastapi import APIRouter, status, UploadFile, File
 from controllers.pdf_controller import PDFController
-from models.pdf import PDF
 
 
 

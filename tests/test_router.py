@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import MagicMock, patch
-
+from fastapi import HTTPException, UploadFile
 
 class TestPDFRouter(unittest.TestCase):
     def setUp(self):

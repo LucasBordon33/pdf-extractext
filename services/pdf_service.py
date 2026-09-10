@@ -10,12 +10,13 @@ from config.constants import (
     PDF_NOT_FOUND,
     PDF_PROCESS_ERROR,
 )
+from config.exceptions import PDFRejectedException, PDFNotFoundException
 import hashlib
 
 
 class PDFService:
-    def __init__(self, pdf_repository=None):
-        self.pdf_repository = pdf_repository or PDFRepository()
+    def __init__(self, repository=None):
+        self.repository = repository or PDFRepository()
 
     async def upload_pdf(self, file) -> dict:
         content = await file.read()
@@ -24,7 +25,7 @@ class PDFService:
         pdf_data = PDF(name=file.filename, text=extracted_text, checksum=checksum)
 
         if self.is_duplicate(pdf_data.checksum):
-            raise ValueError(PDF_REPEATED)
+            raise PDFRejectedException(PDF_REPEATED)
 
         pdf_id = self.pdf_repository.create_pdf(pdf_data)
         return {
@@ -42,11 +43,9 @@ class PDFService:
         pdf_data = PDF(name=file.filename, text=extracted_text, checksum=checksum)
 
         if self.is_duplicate(pdf_data.checksum):
-            raise ValueError(PDF_REPEATED)
+            raise PDFRejectedException(PDF_REPEATED)
 
         updated = self.pdf_repository.update_pdf(pdf_id, pdf_data)
-        if not updated:
-            raise ValueError(PDF_NOT_FOUND)
         return {
             "status": "success",
             "id": pdf_id,
@@ -56,7 +55,7 @@ class PDFService:
         }
 
     def is_duplicate(self, checksum: str) -> bool:
-        return self.pdf_repository.find_by_checksum(checksum) is not None
+        return self.repository.find_by_checksum(checksum) is not None
 
     def calculate_checksum(self, data: bytes) -> str:
         return hashlib.sha256(data).hexdigest()
