@@ -1,0 +1,5 @@
+PDF_REPEATED = "El PDF ya se encuentra repetido en la base de datos."
+PDF_UPLOADED = "PDF subido correctamente"
+PDF_UPDATED = "PDF actualizado correctamente"
+PDF_NOT_FOUND = "PDF no encontrado"
+PDF_PROCESS_ERROR = "Error al procesar PDF"

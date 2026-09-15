@@ -9,7 +9,7 @@ Extraer texto de un PDF proporcionado por el usuario. Hacer un resumen de dicho 
 ## Método de uso
 -Iniciar el contenedor Docker, instalando las dependencias necesarias
 -Una vez inicializado, realizar peticiones al servidor levantado. Desde una terminal de Linux, se hace utilizando el comando curl.
--Las rutas aceptadas son GET, PUT, POST y DELETE. Ejemplo: curl -X GET "http://localhost:8000/api/v1/pdfs" -H "accept: application/json"
+-Las rutas aceptadas son GET, PUT, POST y DELETE. Ejemplo: curl -k -X GET "https://universidad.localhost/api/v1/pdfs" -H "accept: application/json" 
 
 ## tecnologias
 

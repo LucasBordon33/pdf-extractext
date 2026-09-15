@@ -1,6 +1,13 @@
 from fastapi import APIRouter, status, UploadFile, File
 from controllers.pdf_controller import PDFController
-from models.pdf import PDF
+
+
+
+"""
+
+Enrutador que ejecuta segun el request
+
+"""
 
 class PDFRouter:
     def __init__(self):
