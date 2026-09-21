@@ -33,8 +33,8 @@ class TestPDFController(unittest.IsolatedAsyncioTestCase):
         self.mock_service.update_pdf = AsyncMock(
         side_effect=PDFNotFoundException("PDF no encontrado")
         )
-        self.mock_validator = MagicMock()
-        self.mock_validator._validate_is_pdf = AsyncMock()
+        self.mock_validator = AsyncMock()
+        self.mock_validator.validate_is_pdf = AsyncMock()
         self.controller = PDFController(
             pdf_service=self.mock_service,
             pdf_validator=self.mock_validator,
