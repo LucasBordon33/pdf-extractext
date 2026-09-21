@@ -12,3 +12,14 @@ dependencies = [
     "dnspython >= 2.8.0",
     "python-dotenv >= 1.1.0"
 ]
+
+[dependency-groups]
+dev = [
+    "mongomock>=4.3.0",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
