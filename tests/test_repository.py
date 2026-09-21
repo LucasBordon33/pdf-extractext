@@ -1,5 +1,7 @@
 import unittest
-from unittest.mock import MagicMock, patch
+import mongomock
+from bson import ObjectId
+
 from repositories.pdf_repository import PDFRepository
 from models.pdf import PDF
 from config.exceptions import PDFNotFoundException
@@ -7,105 +9,82 @@ from config.exceptions import PDFNotFoundException
 
 class TestPDFRepository(unittest.TestCase):
     def setUp(self):
-        self.mock_db = MagicMock()
-        self.mock_collection = MagicMock()
-        self.mock_db.__getitem__ = MagicMock(return_value=self.mock_collection)
-        self.repo = PDFRepository(db=self.mock_db)
+        # Base de datos MongoDB falsificada en memoria: sin infraestructura externa
+        self.client = mongomock.MongoClient()
+        self.db = self.client["test_db"]
+        self.repo = PDFRepository(db=self.db)
+
+    def _create_pdf(self, name="test.pdf", text="contenido", checksum="abc") -> str:
+        return self.repo.create_pdf(PDF(name=name, text=text, checksum=checksum))
 
     def test_find_by_checksum(self):
-        self.mock_collection.find_one.return_value = {"checksum": "abc"}
+        self._create_pdf()
         result = self.repo.find_by_checksum("abc")
         self.assertIsNotNone(result)
         self.assertEqual(result["checksum"], "abc")
-        self.mock_collection.find_one.assert_called_once_with({"checksum": "abc"})
 
     def test_find_by_checksum_not_found(self):
-        self.mock_collection.find_one.return_value = None
         result = self.repo.find_by_checksum("nonexistent")
         self.assertIsNone(result)
 
     def test_create_pdf(self):
-        mock_result = MagicMock()
-        mock_result.inserted_id = "fake_object_id_123"
-        self.mock_collection.insert_one.return_value = mock_result
-
-        pdf = PDF(name="test.pdf", text="contenido")
-        pdf_id = self.repo.create_pdf(pdf)
+        pdf_id = self._create_pdf()
         self.assertIsNotNone(pdf_id)
-        self.mock_collection.insert_one.assert_called_once()
+        stored = self.repo.get_pdf_by_id(pdf_id)
+        self.assertEqual(stored["name"], "test.pdf")
 
     def test_get_pdfs(self):
-        mock_doc = {
-            "_id": "fake_id",
-            "name": "test.pdf",
-            "text": "contenido",
-            "checksum": "abc",
-        }
-        self.mock_collection.find.return_value = [mock_doc]
-
+        self._create_pdf()
         pdfs = self.repo.get_pdfs()
         self.assertIsInstance(pdfs, list)
         self.assertEqual(len(pdfs), 1)
         self.assertEqual(pdfs[0]["name"], "test.pdf")
 
-    @patch("repositories.pdf_repository.ObjectId", side_effect=lambda x: x)
-    def test_get_pdf_by_id(self, mock_oid):
-        mock_doc = {
-            "_id": "fake_id",
-            "name": "test.pdf",
-            "text": "contenido",
-            "checksum": "abc",
-        }
-        self.mock_collection.find_one.return_value = mock_doc
-
-        pdf = PDF(name="test.pdf", text="contenido")
-        pdf_id = self.repo.create_pdf(pdf)
+    def test_get_pdf_by_id(self):
+        pdf_id = self._create_pdf()
         result = self.repo.get_pdf_by_id(pdf_id)
         self.assertIsNotNone(result)
+        self.assertEqual(result["id"], pdf_id)
         self.assertEqual(result["name"], "test.pdf")
 
-    @patch("repositories.pdf_repository.ObjectId", side_effect=lambda x: x)
-    def test_update_pdf(self, mock_oid):
-        mock_result = MagicMock()
-        mock_result.matched_count = 1
-        self.mock_collection.update_one.return_value = mock_result
+    def test_get_pdf_by_id_not_found(self):
+        with self.assertRaises(PDFNotFoundException):
+            self.repo.get_pdf_by_id(str(ObjectId()))
 
-        updated_doc = {
-            "_id": "fake_id",
-            "name": "nuevo.pdf",
-            "text": "nuevo",
-            "checksum": "def",
-        }
-        self.mock_collection.find_one.return_value = updated_doc
+    def test_get_pdf_by_id_invalid_id(self):
+        with self.assertRaises(PDFNotFoundException):
+            self.repo.get_pdf_by_id("id-invalido")
 
-        pdf = PDF(name="test.pdf", text="contenido")
-        updated = self.repo.update_pdf("fake_id", PDF(name="nuevo.pdf", text="nuevo"))
+    def test_update_pdf(self):
+        pdf_id = self._create_pdf()
+        updated = self.repo.update_pdf(pdf_id, PDF(name="nuevo.pdf", text="nuevo"))
         self.assertEqual(updated["name"], "nuevo.pdf")
 
-    @patch("repositories.pdf_repository.ObjectId", side_effect=lambda x: x)
-    def test_update_pdf_not_found(self, mock_oid):
-        self.mock_collection.update_one.return_value.matched_count = 0
+    def test_update_pdf_not_found(self):
         pdf = PDF(name="test.pdf", text="contenido")
         with self.assertRaises(PDFNotFoundException):
-            self.repo.update_pdf("fake_id", pdf)
+            self.repo.update_pdf(str(ObjectId()), pdf)
 
-    @patch("repositories.pdf_repository.ObjectId", side_effect=lambda x: x)
-    def test_delete_pdf(self, mock_oid):
-        mock_result = MagicMock()
-        mock_result.deleted_count = 1
-        self.mock_collection.delete_one.return_value = mock_result
-
+    def test_update_pdf_invalid_id(self):
         pdf = PDF(name="test.pdf", text="contenido")
-        pdf_id = self.repo.create_pdf(pdf)
+        with self.assertRaises(PDFNotFoundException):
+            self.repo.update_pdf("id-invalido", pdf)
+
+    def test_delete_pdf(self):
+        pdf_id = self._create_pdf()
         result = self.repo.delete_pdf(pdf_id)
         self.assertTrue(result)
-
-    @patch("repositories.pdf_repository.ObjectId", side_effect=lambda x: x)
-    def test_delete_pdf_not_found(self, mock_oid):
-        self.mock_collection.delete_one.return_value.deleted_count = 0
-        pdf = PDF(name="test.pdf", text="contenido")
+        self.assertEqual(result["id"], pdf_id)
         with self.assertRaises(PDFNotFoundException):
-            self.repo.delete_pdf("fake_id")
+            self.repo.get_pdf_by_id(pdf_id)
+
+    def test_delete_pdf_not_found(self):
+        with self.assertRaises(PDFNotFoundException):
+            self.repo.delete_pdf(str(ObjectId()))
+
+    def test_delete_pdf_invalid_id(self):
+        with self.assertRaises(PDFNotFoundException):
+            self.repo.delete_pdf("id-invalido")
 
     def test_is_duplicate_removed(self):
         with self.assertRaises(AttributeError):

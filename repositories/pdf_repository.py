@@ -5,14 +5,11 @@ from config.exceptions import PDFNotFoundException
 
 
 class PDFRepository:
-    def __init__(self, db=None):
+    def __init__(self, db):
         if db is None:
-            from config.settings import db as _db
-
-            db = _db
-
-        if db is None:
-            raise RuntimeError("Database connection not available")
+            raise ValueError(
+                "PDFRepository requiere una conexión de base de datos inyectada (db)"
+            )
         self.db = db
         self.collection = self.db["pdfs"]
 
