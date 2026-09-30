@@ -3,6 +3,7 @@ from io import BytesIO
 from typing import Dict, Any
 from models.pdf import PDF
 from repositories.pdf_repository import PDFRepository
+from config.settings import get_db
 from config.constants import (
     PDF_REPEATED,
     PDF_UPLOADED,
@@ -16,7 +17,7 @@ import hashlib
 
 class PDFService:
     def __init__(self, repository=None):
-        self.repository = repository or PDFRepository()
+        self.repository = repository or PDFRepository(get_db())
 
     async def upload_pdf(self, file) -> dict:
         content = await file.read()

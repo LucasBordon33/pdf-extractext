@@ -18,16 +18,15 @@ services:
     ports:
       - "80:80"
       - "443:443"
-      - "27017:27017"
+      - "8080:8080"
     labels: 
-       - "traefik.enable=true"
-       - "traefik.http.routers.api.rule=Host(`traefik.universidad.localhost`)"
-       - "traefik.http.routers.api.service=api@internal"
-       - "traefik.http.routers.api.entrypoints=websecure"
-       - "traefik.http.routers.api.tls=true"
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`traefik.universidad.localhost`)"
+      - "traefik.http.routers.api.service=api@internal"
+      - "traefik.http.routers.api.entrypoints=websecure"
+      - "traefik.http.routers.api.tls=true"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./certs:/certs
       - ./letsencrypt:/letsencrypt
     networks:
       - pdf-extractext-network
@@ -39,13 +38,6 @@ services:
       target: runner
     image: pdf-extractext:1.0.1
     container_name: pdf-extractext
-    volumes:
-      - .:/app
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
-      - ./traefik/config.yml:/etc/traefik/config.yml:ro
-      - ./certs:/etc/certs:ro
-      - ./letsencrypt:/letsencrypt
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     networks:
       - pdf-extractext-network
@@ -72,6 +64,8 @@ services:
     networks:
       - pdf-extractext-network
     restart: unless-stopped
+    # ⚠️ Normalmente MongoDB no se expone por Traefik, se usa solo interno
+    # Si quieres exponerlo, mantén las labels TCP:
     labels:
       - "traefik.enable=true"
       - "traefik.tcp.routers.mongo.rule=HostSNI(`mongo-express.universidad.localhost`)"
