@@ -50,13 +50,21 @@ class MongoPDFRepository(PDFRepositoryPort):
         return str(result.inserted_id)
 
     def update(self, pdf_id: str, pdf: PDF) -> dict | None:
-        result = self._collection.update_one(
-            {"_id": ObjectId(pdf_id)},
-            {"$set": pdf.model_dump()},
-        )
+        try:
+            result = self._collection.update_one(
+                {"_id": ObjectId(pdf_id)},
+                {"$set": pdf.model_dump()},
+            )
+        except InvalidId:
+            # Contrato coherente con find_by_id: id inválido ≡ no encontrado.
+            return None
         if result.matched_count == 0:
             return None
         return self._serialize(self._collection.find_one({"_id": ObjectId(pdf_id)}))
 
     def delete(self, pdf_id: str) -> bool:
-        return self._collection.delete_one({"_id": ObjectId(pdf_id)}).deleted_count > 0
+        try:
+            return self._collection.delete_one({"_id": ObjectId(pdf_id)}).deleted_count > 0
+        except InvalidId:
+            # Contrato coherente con find_by_id: id inválido ≡ no encontrado.
+            return False

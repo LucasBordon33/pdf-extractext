@@ -18,8 +18,21 @@ dev = [
     "mongomock>=4.3.0",
     "pytest>=9.1.1",
     "pytest-asyncio>=1.4.0",
+    "pytest-cov>=7.1.0",
 ]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+# Cobertura siempre activa (también en CI, vía `uv run pytest`).
+addopts = "--cov"
+
+[tool.coverage.run]
+source = ["application", "domain", "infrastructure", "interfaces"]
+
+[tool.coverage.report]
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "@abstractmethod",
+]

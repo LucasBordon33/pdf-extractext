@@ -175,3 +175,24 @@ def test_delete_pdf(client, fake_repository):
     assert fake_repository.find_by_id("1") is None
     # La segunda eliminación ya no encuentra el PDF: 404
     assert client.delete("/api/v1/pdfs/1").status_code == 404
+
+
+def test_error_inesperado_al_listar_da_500():
+    """Un fallo no previsto (p. ej. caída de la base de datos) se traduce
+    a 500 con contexto a través del manejador de errores centralizado
+    del controller (`_as_http_error`)."""
+    class RepositorioQueFalla(InMemoryPDFRepository):
+        def find_all(self) -> list[dict]:
+            raise RuntimeError("boom de prueba")
+
+    main.app.dependency_overrides[get_pdf_controller] = lambda: _build_controller(
+        RepositorioQueFalla(
+            seed=[{"id": "1", "name": "test.pdf", "checksum": "abc", "text": "hola"}]
+        )
+    )
+    try:
+        response = TestClient(main.app).get("/api/v1/pdfs")
+        assert response.status_code == 500
+        assert "boom de prueba" in response.json()["detail"]
+    finally:
+        main.app.dependency_overrides.clear()
