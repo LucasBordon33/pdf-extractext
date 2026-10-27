@@ -83,10 +83,6 @@ class UpdatePDFUseCase:
         self._text_extractor = text_extractor
 
     def execute(self, pdf_id: str, pdf_file: PDFFile) -> dict:
-        # Único chequeo de existencia (antes estaba duplicado controller/repo).
-        if self._repository.find_by_id(pdf_id) is None:
-            raise PDFNotFoundError(f"El PDF con id '{pdf_id}' no existe")
-
         self._validator.validate(pdf_file)
 
         checksum = _calculate_checksum(pdf_file.content)
@@ -97,6 +93,8 @@ class UpdatePDFUseCase:
             text=self._text_extractor.extract_text(pdf_file.content),
             checksum=checksum,
         )
+        # Único chequeo de existencia: surge del resultado de la actualización,
+        # lo que evita duplicar la regla y es seguro ante carreras.
         updated = self._repository.update(pdf_id, pdf)
         if updated is None:
             raise PDFNotFoundError(f"El PDF con id '{pdf_id}' no existe")

@@ -213,3 +213,8 @@ __marimo__/
 # Opencode
 
 .opencode/
+
+# Secretos y binarios de infraestructura local (nunca subir al repo)
+letsencrypt/
+docker/traefik/certs/
+*.exe

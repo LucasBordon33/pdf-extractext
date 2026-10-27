@@ -23,7 +23,8 @@ const BASE_URL = 'https://universidad.localhost';
 const pdfFile = open('./data/simple.pdf', 'b');
 
 export default function () {
-    // El servicio rechaza checksums duplicados con 400 (is_duplicate en PDFService).
+    // La API rechaza checksums duplicados con 409 (regla de negocio
+    // `_ensure_not_duplicate` en RegisterPDFUseCase, capa de aplicación).
     // Se añade un sufijo único por iteración tras el %%EOF (pypdf lo tolera) para que
     // cada petición ejercite el camino completo de inserción (201) y no el de duplicados.
     // Nota: http.file solo acepta string o ArrayBuffer, por eso se usa merged.buffer.
