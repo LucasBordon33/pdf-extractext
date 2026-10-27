@@ -1,65 +1,109 @@
-import importlib
-from unittest.mock import patch
+"""
+Tests de integración del seam HTTP contra el stack nuevo.
+
+Se ejercita la app real (`main.app`) con su router real; la única pieza
+sustituida es la dependencia de composición `get_pdf_controller`, que se
+sobrescribe con `app.dependency_overrides` (seam documentado en
+`interfaces/dependencies.py`). El grafo inyectado usa los casos de uso
+reales con validador y extractor reales, y un repositorio en memoria que
+implementa el puerto `PDFRepositoryPort`. MongoDB real nunca se toca.
+"""
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 
-from controllers.pdf_controller import PDFController
-from services.pdf_service import PDFService
-from config.exceptions import PDFNotFoundException
+import main
+from application.ports import PDFRepositoryPort
+from application.use_cases import (
+    DeletePDFUseCase,
+    ListPDFsUseCase,
+    PDFUseCases,
+    RegisterPDFUseCase,
+    UpdatePDFUseCase,
+)
+from domain.entities import PDF
+from infrastructure.pdf.pypdf_text_extractor import PypdfTextExtractor
+from infrastructure.pdf.pdf_validator import FileFormatPDFValidator
+from interfaces.controllers.pdf_controller import PDFController
+from interfaces.dependencies import get_pdf_controller
+
+DATA_DIR = Path(__file__).parent / "data"
 
 
-class FakeRepository:
-    """Repositorio en memoria que aísla los tests del router de MongoDB."""
+class InMemoryPDFRepository(PDFRepositoryPort):
+    """Repositorio en memoria: implementa el puerto de persistencia del
+    stack nuevo, aislado por completo de MongoDB."""
 
-    def __init__(self):
-        self._pdfs = [
-            {"id": "1", "name": "test.pdf", "checksum": "abc", "text": "hola"}
-        ]
+    def __init__(self, seed: list[dict] | None = None) -> None:
+        self._pdfs = {pdf["id"]: dict(pdf) for pdf in (seed or [])}
 
-    def get_pdfs(self):
-        return [dict(pdf) for pdf in self._pdfs]
+    def find_by_checksum(self, checksum: str) -> dict | None:
+        return next(
+            (dict(p) for p in self._pdfs.values() if p["checksum"] == checksum),
+            None,
+        )
 
-    def find_by_checksum(self, checksum):
-        for pdf in self._pdfs:
-            if pdf["checksum"] == checksum:
-                return dict(pdf)
-        return None
+    def find_all(self) -> list[dict]:
+        return [dict(p) for p in self._pdfs.values()]
 
-    def delete_pdf(self, pdf_id):
-        for pdf in self._pdfs:
-            if pdf["id"] == pdf_id:
-                self._pdfs.remove(pdf)
-                return {
-                    "status": "success",
-                    "id": pdf_id,
-                    "message": "PDF eliminado correctamente",
-                }
-        raise PDFNotFoundException(f"PDF con id {pdf_id} no encontrado")
+    def find_by_id(self, pdf_id: str) -> dict | None:
+        pdf = self._pdfs.get(pdf_id)
+        return dict(pdf) if pdf else None
+
+    def save(self, pdf: PDF) -> str:
+        pdf_id = f"pdf-{len(self._pdfs) + 1}"
+        self._pdfs[pdf_id] = {"id": pdf_id, **pdf.model_dump()}
+        return pdf_id
+
+    def update(self, pdf_id: str, pdf: PDF) -> dict | None:
+        if pdf_id not in self._pdfs:
+            return None
+        self._pdfs[pdf_id] = {"id": pdf_id, **pdf.model_dump()}
+        return dict(self._pdfs[pdf_id])
+
+    def delete(self, pdf_id: str) -> bool:
+        return self._pdfs.pop(pdf_id, None) is not None
+
+
+def _build_controller(repository: PDFRepositoryPort) -> PDFController:
+    """Compone el grafo real de casos de uso con el repositorio falso."""
+    validator = FileFormatPDFValidator()
+    extractor = PypdfTextExtractor()
+    use_cases = PDFUseCases(
+        register=RegisterPDFUseCase(repository, validator, extractor),
+        update=UpdatePDFUseCase(repository, validator, extractor),
+        list_all=ListPDFsUseCase(repository),
+        delete=DeletePDFUseCase(repository),
+    )
+    return PDFController(use_cases)
 
 
 @pytest.fixture()
-def fake_repository():
-    return FakeRepository()
+def fake_repository() -> InMemoryPDFRepository:
+    return InMemoryPDFRepository(
+        seed=[{"id": "1", "name": "test.pdf", "checksum": "abc", "text": "hola"}]
+    )
 
 
 @pytest.fixture()
 def client(fake_repository):
-    controller = PDFController(
-        pdf_service=PDFService(repository=fake_repository)
+    main.app.dependency_overrides[get_pdf_controller] = lambda: _build_controller(
+        fake_repository
     )
+    yield TestClient(main.app)
+    main.app.dependency_overrides.clear()
 
-    # El router instancia PDFController() internamente; se inyecta el
-    # controller cableado con el FakeRepository en su lugar. Se recarga
-    # `main` para reconstruir la app con el controller de este test,
-    # dentro del patch (así nunca se toca Mongo real, ni siquiera al
-    # restaurar el módulo).
-    with patch("routers.pdf_router.PDFController", return_value=controller):
-        import main
 
-        importlib.reload(main)
-        yield TestClient(main.app)
-        importlib.reload(main)
+def _read_pdf(name: str) -> bytes:
+    return (DATA_DIR / name).read_bytes()
+
+
+def _upload_bytes() -> bytes:
+    """Contenido distinto al del seed: mismo PDF válido con un sufijo
+    agregado tras el %%EOF (pypdf lo tolera, como ya hace tests/spike_tests.js),
+    lo que cambia el checksum sin romper la extracción."""
+    return _read_pdf("simple.pdf") + b"update-test-suffix"
 
 
 def test_health_check(client):
@@ -71,13 +115,63 @@ def test_health_check(client):
 def test_get_pdfs(client):
     response = client.get("/api/v1/pdfs")
     assert response.status_code == 200
-    assert isinstance(response.json(), dict)
-    assert response.json()["count"] == 1
-    assert response.json()["data"][0]["filename"] == "test.pdf"
+    body = response.json()
+    assert body["count"] == 1
+    assert body["data"][0]["filename"] == "test.pdf"
+    assert body["data"][0]["text_preview"] == "hola"
+
+
+def test_upload_pdf(client):
+    response = client.post(
+        "/api/v1/upload",
+        files={"file": ("simple.pdf", _read_pdf("simple.pdf"), "application/pdf")},
+    )
+    assert response.status_code == 201
+    body = response.json()
+    assert body["status"] == "success"
+    assert body["filename"] == "simple.pdf"
+    assert body["id"]
+    assert body["checksum"]
+
+
+def test_upload_duplicate_pdf(client):
+    upload = {"file": ("simple.pdf", _read_pdf("simple.pdf"), "application/pdf")}
+    assert client.post("/api/v1/upload", files=upload).status_code == 201
+    duplicate = client.post("/api/v1/upload", files=upload)
+    assert duplicate.status_code == 409
+
+
+def test_upload_invalid_pdf(client):
+    response = client.post(
+        "/api/v1/upload",
+        files={"file": ("fake.pdf", b"esto no es un pdf", "application/pdf")},
+    )
+    assert response.status_code == 400
+
+
+def test_update_pdf(client):
+    response = client.put(
+        "/api/v1/pdfs/1",
+        files={"file": ("simple.pdf", _upload_bytes(), "application/pdf")},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["id"] == "1"
+    assert body["filename"] == "simple.pdf"
+    assert body["checksum"] != "abc"
+
+
+def test_update_pdf_not_found(client):
+    response = client.put(
+        "/api/v1/pdfs/no-existe",
+        files={"file": ("simple.pdf", _upload_bytes(), "application/pdf")},
+    )
+    assert response.status_code == 404
 
 
 def test_delete_pdf(client, fake_repository):
     response = client.delete("/api/v1/pdfs/1")
     assert response.status_code == 204
-    with pytest.raises(PDFNotFoundException):
-        fake_repository.delete_pdf("1")
+    assert fake_repository.find_by_id("1") is None
+    # La segunda eliminación ya no encuentra el PDF: 404
+    assert client.delete("/api/v1/pdfs/1").status_code == 404
