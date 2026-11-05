@@ -6,7 +6,8 @@ sustituida es la dependencia de composición `get_pdf_controller`, que se
 sobrescribe con `app.dependency_overrides` (seam documentado en
 `interfaces/dependencies.py`). El grafo inyectado usa los casos de uso
 reales con validador y extractor reales, y un repositorio en memoria que
-implementa el puerto `PDFRepositoryPort`. MongoDB real nunca se toca.
+implementa los puertos segregados `ReaderPort` y `WriterPort`. MongoDB
+real nunca se toca.
 """
 from pathlib import Path
 
@@ -14,7 +15,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 import main
-from application.ports import PDFRepositoryPort
+from application.ports import ReaderPort, WriterPort
 from application.use_cases import (
     DeletePDFUseCase,
     ListPDFsUseCase,
@@ -31,9 +32,9 @@ from interfaces.dependencies import get_pdf_controller
 DATA_DIR = Path(__file__).parent / "data"
 
 
-class InMemoryPDFRepository(PDFRepositoryPort):
-    """Repositorio en memoria: implementa el puerto de persistencia del
-    stack nuevo, aislado por completo de MongoDB."""
+class InMemoryPDFRepository(ReaderPort, WriterPort):
+    """Repositorio en memoria: implementa los puertos de persistencia
+    segregados del stack nuevo, aislado por completo de MongoDB."""
 
     def __init__(self, seed: list[dict] | None = None) -> None:
         self._pdfs = {pdf["id"]: dict(pdf) for pdf in (seed or [])}
@@ -66,13 +67,13 @@ class InMemoryPDFRepository(PDFRepositoryPort):
         return self._pdfs.pop(pdf_id, None) is not None
 
 
-def _build_controller(repository: PDFRepositoryPort) -> PDFController:
+def _build_controller(repository: InMemoryPDFRepository) -> PDFController:
     """Compone el grafo real de casos de uso con el repositorio falso."""
     validator = FileFormatPDFValidator()
     extractor = PypdfTextExtractor()
     use_cases = PDFUseCases(
-        register=RegisterPDFUseCase(repository, validator, extractor),
-        update=UpdatePDFUseCase(repository, validator, extractor),
+        register=RegisterPDFUseCase(repository, repository, validator, extractor),
+        update=UpdatePDFUseCase(repository, repository, validator, extractor),
         list_all=ListPDFsUseCase(repository),
         delete=DeletePDFUseCase(repository),
     )

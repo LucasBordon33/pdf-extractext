@@ -1,22 +1,23 @@
 """
 INFRAESTRUCTURA — Adaptador de persistencia MongoDB.
 
-Implementa el puerto `PDFRepositoryPort`. SOLO acceso a datos:
+Implementa los puertos segregados `ReaderPort` (consultas) y `WriterPort`
+(mutaciones). SOLO acceso a datos:
 - No existe lógica de duplicados (la regla vive en la capa de aplicación);
   aquí solo hay la consulta `find_by_checksum`.
 - Detalles de Mongo (ObjectId, colección "pdfs") quedan confinados aquí.
 
-Para migrar a SQL: crear un `SQLPDFRepository(PDFRepositoryPort)` y
+Para migrar a SQL: crear un `SQLPDFRepository(ReaderPort, WriterPort)` y
 registrarlo en `interfaces/dependencies.py`. Nada más cambia.
 """
 from bson import ObjectId
 from bson.errors import InvalidId
 
-from application.ports import PDFRepositoryPort
+from application.ports import ReaderPort, WriterPort
 from domain.entities import PDF
 
 
-class MongoPDFRepository(PDFRepositoryPort):
+class MongoPDFRepository(ReaderPort, WriterPort):
     def __init__(self, db) -> None:
         if db is None:
             raise RuntimeError("Database connection not available")

@@ -16,9 +16,11 @@ from domain.entities import PDF
 from domain.pdf_file import PDFFile
 
 
-class PDFRepositoryPort(ABC):
+class ReaderPort(ABC):
     """
-    Puerto de persistencia. SOLO acceso a datos: ninguna regla de negocio
+    Puerto de LECTURA (ISP): solo consultas. Los casos de uso que únicamente
+    leen datos (p. ej. listar) dependen de esta interfaz mínima, nunca de un
+    repositorio completo. SOLO acceso a datos: ninguna regla de negocio
     (duplicados, validación) vive aquí; pertenecen al servicio de dominio.
     """
 
@@ -31,6 +33,13 @@ class PDFRepositoryPort(ABC):
 
     @abstractmethod
     def find_by_id(self, pdf_id: str) -> dict | None: ...
+
+
+class WriterPort(ABC):
+    """
+    Puerto de ESCRITURA (ISP): solo mutaciones. Los casos de uso que crean,
+    modifican o eliminan datos dependen de esta interfaz mínima.
+    """
 
     @abstractmethod
     def save(self, pdf: PDF) -> str:

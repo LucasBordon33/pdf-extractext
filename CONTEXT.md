@@ -18,7 +18,11 @@
 
 Las dependencias apuntan siempre hacia adentro:
 `interfaces → application → domain`; `infrastructure` implementa los puertos
-definidos por la aplicación.
+definidos por la aplicación. La persistencia aplica el **Principio de
+Segregación de Interfaces (ISP)**: el antiguo `PDFRepositoryPort` se dividió
+en dos contratos separados — `ReaderPort` (solo consultas) y `WriterPort`
+(solo mutaciones) — que cada adaptador concreto implementa ambos; cada caso
+de uso depende únicamente del rol que usa.
 
 ## 1. Seams (fronteras de testeo)
 
@@ -28,8 +32,8 @@ y ningún test depende de variables de entorno ni de `.env`.
 
 | Seam | Qué se prueba | Qué se aísla | Herramienta de aislamiento |
 |---|---|---|---|
-| **HTTP (integración)** (`main.app`, `interfaces/routers/pdf_router.py`, `interfaces/controllers/pdf_controller.py`) | Contrato HTTP (status codes, payloads), mapeo `UploadFile` → `PDFFile`, traducción de excepciones de dominio a `HTTPException` (400/404/409/500) | Composition root real y MongoDB | `app.dependency_overrides[get_pdf_controller]` con casos de uso reales + repositorio en memoria que implementa `PDFRepositoryPort` |
-| **Casos de uso / dominio** (`application/use_cases.py`, `domain/`) | Reglas de negocio puras: duplicados por checksum (`_ensure_not_duplicate`), cálculo de checksum (`_calculate_checksum`), existencia previa en update/delete, propiedades derivadas de `PDFFile` | Puertos de persistencia, validación y extracción | Dobles de prueba contra los puertos (`PDFRepositoryPort`, `PDFValidatorPort`, `PDFTextExtractorPort`): fakes en memoria o `MagicMock(spec=...)` |
+| **HTTP (integración)** (`main.app`, `interfaces/routers/pdf_router.py`, `interfaces/controllers/pdf_controller.py`) | Contrato HTTP (status codes, payloads), mapeo `UploadFile` → `PDFFile`, traducción de excepciones de dominio a `HTTPException` (400/404/409/500) | Composition root real y MongoDB | `app.dependency_overrides[get_pdf_controller]` con casos de uso reales + repositorio en memoria que implementa los puertos segregados `ReaderPort` y `WriterPort` |
+| **Casos de uso / dominio** (`application/use_cases.py`, `domain/`) | Reglas de negocio puras: duplicados por checksum (`_ensure_not_duplicate`), cálculo de checksum (`_calculate_checksum`), existencia previa en update/delete, propiedades derivadas de `PDFFile` | Puertos de persistencia, validación y extracción | Dobles de prueba contra los puertos (`ReaderPort`/`WriterPort` según el rol del caso de uso, `PDFValidatorPort`, `PDFTextExtractorPort`): fakes en memoria o `MagicMock(spec=...)` |
 | **Adaptador de persistencia** (`infrastructure/persistence/mongo_pdf_repository.py`) | Implementación del puerto sobre Mongo: consultas, serialización `_id` → `id`, tolerancia a `ObjectId` inválidos | Servidor MongoDB | **`mongomock`** (MongoDB en memoria) |
 
 ## 2. Cómo probar el seam HTTP (router + controller)
@@ -45,7 +49,7 @@ y ningún test depende de variables de entorno ni de `.env`.
   ```
 
   inyectando un bundle `PDFUseCases` real construido sobre un
-  `InMemoryPDFRepository(PDFRepositoryPort)`. Así se ejercita la cadena completa
+  `InMemoryPDFRepository(ReaderPort, WriterPort)`. Así se ejercita la cadena completa
   (router → controller → casos de uso → dominio) sustituyendo solo la persistencia.
 - Se prueba con `fastapi.testclient.TestClient`, sin levantar servidor ni Mongo.
 - Si se testea el controller en forma unitaria, el `UploadFile` se simula con
