@@ -1,16 +1,4 @@
-"""
-Capa de DOMINIO — Value Object `PDFFile`.
-
-Este tipo AISLA al dominio del framework web. El adaptador HTTP
-(controller) mapea `UploadFile` (FastAPI) a `PDFFile` antes de llamar al
-servicio, de modo que la capa de aplicación nunca conoce tipos de Starlette.
-
-Es inmutable: representa "un archivo tal como llegó", con sus bytes y
-metadatos relevantes para las reglas de negocio (nombre, tamaño, magic bytes).
-"""
 from dataclasses import dataclass
-
-
 @dataclass(frozen=True)
 class PDFFile:
     """Archivo PDF recibido, expresado en términos del dominio."""

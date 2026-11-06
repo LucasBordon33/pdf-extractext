@@ -1,15 +1,3 @@
-"""
-Tests unitarios del seam de INFRAESTRUCTURA (ver CONTEXT.md §1, seam 3).
-
-1. Reglas del validador de formato: estrategias atómicas inyectables
-   (patrón Estrategia / OCP) y comportamiento del compositor por defecto.
-2. Adaptador de persistencia `MongoPDFRepository` sobre **mongomock**
-   (MongoDB en memoria): nunca se toca un servidor real.
-3. Composition root: el grafo completo de `interfaces/dependencies.py`
-   se construye y ejecuta de punta a punta sustituyendo únicamente el
-   driver (cliente de Mongo) por el de mongomock, sin variables de
-   entorno ni conexión de red.
-"""
 import hashlib
 from pathlib import Path
 from unittest.mock import MagicMock

@@ -1,17 +1,3 @@
-"""
-INTERFACES — Adaptador HTTP (controller).
-
-Responsabilidades ÚNICAS (todo lo del framework vive solo aquí):
-1. Mapear `UploadFile` (FastAPI) -> `PDFFile` (dominio) ANTES de invocar
-   los casos de uso. La capa de aplicación nunca ve tipos del framework.
-2. Traducir excepciones a `HTTPException` mediante la tabla centralizada
-   `_DOMAIN_ERROR_STATUS` (manejador de errores único: cada endpoint tiene
-   una sola línea de traducción, sin escaleras try/except duplicadas).
-3. Formatear las respuestas HTTP.
-
-No contiene reglas de negocio ni instancia dependencias: recibe el bundle
-de casos de uso por inyección (ver `interfaces/dependencies.py`).
-"""
 from fastapi import HTTPException, UploadFile
 
 from application.use_cases import PDFUseCases

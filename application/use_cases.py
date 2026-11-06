@@ -1,32 +1,10 @@
-"""
-Capa de APLICACIÓN — Casos de uso explícitos.
-
-Cada clase representa UNA operación del negocio (Register, Update, List,
-Delete), en lugar de un servicio genérico. Esto hace explícito qué puede
-hacer el sistema y dónde vive cada regla.
-
-Reglas de negocio (centralizadas aquí, única fuente de verdad):
-- El archivo debe ser un PDF válido (puerto `PDFValidatorPort`).
-- No puede haber dos PDFs con el mismo checksum (`_ensure_not_duplicate`,
-  compartida por Register y Update sin duplicar código).
-
-Independencias: ningún caso de uso importa FastAPI ni MongoDB; reciben
-puertos por constructor (Inversión de Dependencias) y trabajan con el
-value object de dominio `PDFFile` (los tipos del framework los mapea el
-controller).
-
-Segregación de interfaces (ISP): cada caso de uso depende solo del rol que
-usa — `ReaderPort` si solo consulta (List), `WriterPort` si solo muta
-(Delete) y ambos cuando la regla lo exige (Register/Update necesitan
-consultar el checksum y persistir).
-"""
 import hashlib
 from dataclasses import dataclass
 
 from application.ports import (
-    PDFTextExtractorPort,
-    PDFValidatorPort,
     ReaderPort,
+    TextExtractorPort,
+    ValidatorPort,
     WriterPort,
 )
 from domain.entities import PDF
@@ -58,8 +36,8 @@ class RegisterPDFUseCase:
         self,
         reader: ReaderPort,
         writer: WriterPort,
-        validator: PDFValidatorPort,
-        text_extractor: PDFTextExtractorPort,
+        validator: ValidatorPort,
+        text_extractor: TextExtractorPort,
     ) -> None:
         self._reader = reader
         self._writer = writer
@@ -88,8 +66,8 @@ class UpdatePDFUseCase:
         self,
         reader: ReaderPort,
         writer: WriterPort,
-        validator: PDFValidatorPort,
-        text_extractor: PDFTextExtractorPort,
+        validator: ValidatorPort,
+        text_extractor: TextExtractorPort,
     ) -> None:
         self._reader = reader
         self._writer = writer

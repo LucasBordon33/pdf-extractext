@@ -1,17 +1,11 @@
-"""
-INFRAESTRUCTURA — Adaptador de extracción de texto con pypdf.
-
-Implementa `PDFTextExtractorPort`. Detalle técnico reemplazable
-(pdfminer, OCR, etc.) sin tocar la capa de aplicación.
-"""
 from io import BytesIO
 
 from pypdf import PdfReader
 
-from application.ports import PDFTextExtractorPort
+from application.ports import TextExtractorPort
 
 
-class PypdfTextExtractor(PDFTextExtractorPort):
+class PypdfTextExtractor(TextExtractorPort):
     def extract_text(self, content: bytes) -> str:
         pdf_reader = PdfReader(BytesIO(content))
         return "".join(

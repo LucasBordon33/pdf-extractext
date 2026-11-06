@@ -1,15 +1,3 @@
-"""
-INFRAESTRUCTURA — Adaptador de persistencia MongoDB.
-
-Implementa los puertos segregados `ReaderPort` (consultas) y `WriterPort`
-(mutaciones). SOLO acceso a datos:
-- No existe lógica de duplicados (la regla vive en la capa de aplicación);
-  aquí solo hay la consulta `find_by_checksum`.
-- Detalles de Mongo (ObjectId, colección "pdfs") quedan confinados aquí.
-
-Para migrar a SQL: crear un `SQLPDFRepository(ReaderPort, WriterPort)` y
-registrarlo en `interfaces/dependencies.py`. Nada más cambia.
-"""
 from bson import ObjectId
 from bson.errors import InvalidId
 

@@ -1,10 +1,3 @@
-"""
-Tests unitarios del seam de DOMINIO (ver CONTEXT.md §1, seam 2).
-
-Objetos puros (sin dobles ni infraestructura): el invariante de la
-entidad `PDF` (checksum obligatorio) y las propiedades derivadas e
-inmutabilidad del value object `PDFFile`.
-"""
 import dataclasses
 
 import pytest

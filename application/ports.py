@@ -1,27 +1,12 @@
-"""
-Capa de APLICACIÓN — Puertos (interfaces).
-
-Clean Architecture: la capa de aplicación define los contratos que necesita
-del mundo exterior; la infraestructura los IMPLEMENTA. Las dependencias
-apuntan siempre hacia adentro (infrastructure -> application -> domain).
-
-Para reemplazar infraestructura (MongoDB -> SQL, pypdf -> otro motor) basta
-con crear un nuevo adaptador que implemente el puerto correspondiente y
-registrarlo en el composition root (`interfaces/dependencies.py`), sin tocar
-ni servicios ni dominio.
-"""
 from abc import ABC, abstractmethod
-
 from domain.entities import PDF
 from domain.pdf_file import PDFFile
 
 
 class ReaderPort(ABC):
     """
-    Puerto de LECTURA (ISP): solo consultas. Los casos de uso que únicamente
-    leen datos (p. ej. listar) dependen de esta interfaz mínima, nunca de un
-    repositorio completo. SOLO acceso a datos: ninguna regla de negocio
-    (duplicados, validación) vive aquí; pertenecen al servicio de dominio.
+    Puerto de LECTURA. Solo para los casos de uso que
+    leen datos.
     """
 
     @abstractmethod
@@ -37,8 +22,8 @@ class ReaderPort(ABC):
 
 class WriterPort(ABC):
     """
-    Puerto de ESCRITURA (ISP): solo mutaciones. Los casos de uso que crean,
-    modifican o eliminan datos dependen de esta interfaz mínima.
+    Puerto de ESCRITURA. Solo para los casos de uso que
+    escriben datos.
     """
 
     @abstractmethod
@@ -53,7 +38,7 @@ class WriterPort(ABC):
         """True si se eliminó, False si no existía."""
 
 
-class PDFValidatorPort(ABC):
+class ValidatorPort(ABC):
     """Puerto de validación: opera sobre el value object de dominio `PDFFile`
     (nunca sobre tipos del framework). Lanza `InvalidPDFError` si no cumple."""
 
@@ -61,7 +46,7 @@ class PDFValidatorPort(ABC):
     def validate(self, pdf_file: PDFFile) -> None: ...
 
 
-class PDFTextExtractorPort(ABC):
+class TextExtractorPort(ABC):
     """Puerto de extracción de texto (detalle técnico intercambiable)."""
 
     @abstractmethod

@@ -1,12 +1,3 @@
-"""
-INTERFACES — Router FastAPI.
-
-El router NO instancia el controller: lo recibe inyectado con
-`Depends(get_pdf_controller)` (el composition root vive en
-`interfaces/dependencies.py`). Esto desacopla al router del grafo de
-construcción y permite sustituir dependencias en tests con
-`app.dependency_overrides`.
-"""
 from fastapi import APIRouter, Depends, File, UploadFile, status
 
 from interfaces.controllers.pdf_controller import PDFController

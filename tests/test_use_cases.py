@@ -1,23 +1,12 @@
-"""
-Tests unitarios del seam CASOS DE USO / DOMINIO (ver CONTEXT.md §1, seam 2).
-
-Reglas de negocio de la capa de aplicación con dobles que respetan los
-puertos (`MagicMock(spec=...)`): persistencia, validación y extracción
-quedan sustituidas. Nunca se toca MongoDB real.
-
-El checksum esperado se calcula en el test a partir de un contenido
-conocido: aserción contra un oráculo independiente, no contra el
-propio código bajo prueba.
-"""
 import hashlib
 from unittest.mock import MagicMock
 
 import pytest
 
 from application.ports import (
-    PDFTextExtractorPort,
-    PDFValidatorPort,
     ReaderPort,
+    TextExtractorPort,
+    ValidatorPort,
     WriterPort,
 )
 from application.use_cases import (
@@ -46,12 +35,12 @@ def mock_writer():
 
 @pytest.fixture()
 def mock_validator():
-    return MagicMock(spec=PDFValidatorPort)
+    return MagicMock(spec=ValidatorPort)
 
 
 @pytest.fixture()
 def mock_extractor():
-    extractor = MagicMock(spec=PDFTextExtractorPort)
+    extractor = MagicMock(spec=TextExtractorPort)
     extractor.extract_text.return_value = "texto extraido"
     return extractor
 

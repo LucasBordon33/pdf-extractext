@@ -1,21 +1,3 @@
-"""
-INTERFACES — Composition Root (IoC / Inyección de Dependencias).
-
-ÚNICO punto del sistema donde se decide qué adaptadores de infraestructura
-implementan cada puerto de aplicación, y dónde se compone el bundle de
-casos de uso que recibe el controller:
-
-    router -> PDFController -> PDFUseCases -> (ReaderPort / WriterPort,
-                                               PDFValidatorPort,
-                                               PDFTextExtractorPort)
-
-La conexión a Mongo es DIFERIDA: `get_db()` solo conecta cuando se
-construye el repositorio en el primer request, nunca al importar módulos.
-
-Para reemplazar infraestructura (MongoDB -> SQL, pypdf -> OCR) se cambia
-solo este archivo; dominio, aplicación e interfaces no se modifican.
-En tests: `app.dependency_overrides[get_pdf_controller] = ...`.
-"""
 from application.use_cases import (
     DeletePDFUseCase,
     ListPDFsUseCase,
@@ -44,10 +26,7 @@ def get_text_extractor() -> PypdfTextExtractor:
 
 def get_pdf_use_cases() -> PDFUseCases:
     """Compone los casos de uso inyectando los adaptadores concretos.
-
-    `MongoPDFRepository` implementa ambos puertos segregados (ISP): la MISMA
-    instancia se entrega como `ReaderPort` a los casos de uso de consulta y
-    como `WriterPort` a los de mutación, según lo que cada uno requiera."""
+    """
     repository = get_pdf_repository()
     validator = get_pdf_validator()
     extractor = get_text_extractor()

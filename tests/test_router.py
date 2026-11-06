@@ -1,14 +1,3 @@
-"""
-Tests de integración del seam HTTP contra el stack nuevo.
-
-Se ejercita la app real (`main.app`) con su router real; la única pieza
-sustituida es la dependencia de composición `get_pdf_controller`, que se
-sobrescribe con `app.dependency_overrides` (seam documentado en
-`interfaces/dependencies.py`). El grafo inyectado usa los casos de uso
-reales con validador y extractor reales, y un repositorio en memoria que
-implementa los puertos segregados `ReaderPort` y `WriterPort`. MongoDB
-real nunca se toca.
-"""
 from pathlib import Path
 
 import pytest

@@ -1,20 +1,7 @@
-"""
-INFRAESTRUCTURA — Adaptador de validación de PDFs (patrón Estrategia).
-
-Implementa `PDFValidatorPort` operando sobre el value object de dominio
-`PDFFile` (no sobre `UploadFile`): el framework queda completamente fuera.
-Comunica los fallos con la excepción de dominio `InvalidPDFError`.
-
-OCP: cada regla de formato es una estrategia atómica e inyectable (clase
-`PDFValidationRule`). `validate` es CERRADO a modificación: agregar una
-regla nueva = escribir una clase de regla y sumarla a la lista por
-defecto, o inyectar la lista por constructor, sin tocar el método
-principal.
-"""
 import os
 from abc import ABC, abstractmethod
 
-from application.ports import PDFValidatorPort
+from application.ports import ValidatorPort
 from domain.exceptions import InvalidPDFError
 from domain.pdf_file import PDFFile
 
@@ -55,7 +42,7 @@ class MaxFileSize(PDFValidationRule):
             raise InvalidPDFError("El archivo excede el tamaño permitido")
 
 
-class FileFormatPDFValidator(PDFValidatorPort):
+class FileFormatPDFValidator(ValidatorPort):
     """Validador compuesto: recorre las reglas inyectadas en orden y lanza
     `InvalidPDFError` en la primera que no se cumpla."""
 
