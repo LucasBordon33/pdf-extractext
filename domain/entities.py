@@ -2,11 +2,9 @@ from pydantic import BaseModel, field_validator
 
 
 class PDF(BaseModel):
-    """Entidad de dominio: un PDF registrado en el sistema.
-    Invariante: un PDF no puede existir sin checksum (obligatorio y no
-    vacío). Quien intente construir uno inválido recibe `ValueError`
-    (envuelto en `ValidationError` por pydantic) en la propia
-    inicialización, sin depender de validaciones externas.
+    """Entidad de dominio: PDF.
+    Invariante: El checksum es obligatorio. Su ausencia falla en la 
+    inicialización, garantizando un estado válido sin depender de validadores externos.
     """
 
     name: str

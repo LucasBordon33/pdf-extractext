@@ -161,10 +161,10 @@ def test_delete_id_malformado_devuelve_false(repo):
 # Composition root (grafo completo, sin tocar MongoDB real)
 # ----------------------------------------------------------------------
 async def test_composition_root_registra_un_pdf_de_punta_a_punta(monkeypatch):
-    """Se sustituye SOLO el driver (cliente de Mongo) por el de mongomock
-    y se ejecuta el flujo real completo: controller -> casos de uso ->
-    validador -> extractor pypdf -> MongoPDFRepository. Sin variables de
-    entorno y sin conexión de red."""
+    """Prueba de integración End-to-End. 
+    Mockea únicamente el driver (mongomock) para aislar la red y el .env. 
+    Verifica el flujo real completo: controller -> casos de uso -> adaptadores -> MongoPDFRepository.
+    """
     monkeypatch.setattr(settings, "_client", mongomock.MongoClient())
     controller = get_pdf_controller()
 

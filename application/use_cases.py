@@ -93,6 +93,19 @@ class UpdatePDFUseCase:
         return updated
 
 
+class GetPDFByIdUseCase:
+    """Caso de uso: obtener un PDF por su id (solo lectura)."""
+
+    def __init__(self, reader: ReaderPort) -> None:
+        self._reader = reader
+
+    def execute(self, pdf_id: str) -> dict:
+        pdf = self._reader.find_by_id(pdf_id)
+        if pdf is None:
+            raise PDFNotFoundError(f"El PDF con id '{pdf_id}' no existe")
+        return pdf
+
+
 class ListPDFsUseCase:
     """Caso de uso: listar todos los PDFs registrados (solo lectura)."""
 
@@ -120,5 +133,6 @@ class PDFUseCases:
     controller y añadir casos de uso futuros sin cambiar firmas."""
     register: RegisterPDFUseCase
     update: UpdatePDFUseCase
+    get_by_id: GetPDFByIdUseCase
     list_all: ListPDFsUseCase
     delete: DeletePDFUseCase

@@ -68,9 +68,11 @@ y ningún test depende de variables de entorno ni de `.env`.
   MongoDB corriendo.
 - Prohibido en tests: levantar un `MongoClient` real, depender de `.env`, o parchear
   `ObjectId`/colecciones a mano — `mongomock` ya cubre ese comportamiento.
-- Estado actual: la suite unitaria del adaptador está pendiente de escribir; hoy el
-  adaptador queda cubierto de forma indirecta por el seam HTTP (con el repositorio
-  en memoria sustituyéndolo).
+- Estado actual: la suite unitaria del adaptador está cubierta en
+  `tests/test_infrastructure.py` con `mongomock` (consultas, serialización
+  `_id` → `id`, tolerancia a ids inválidos y composición punta a punta), además
+  de la cobertura indirecta que aporta el seam HTTP (con el repositorio en
+  memoria sustituyéndolo).
 
 ## 4. Regla de ciclo TDD (rojo → verde → refactor) en rebanadas verticales
 
