@@ -1,5 +1,6 @@
 from application.use_cases import (
     DeletePDFUseCase,
+    GetPDFByIdUseCase,
     ListPDFsUseCase,
     PDFUseCases,
     RegisterPDFUseCase,
@@ -33,6 +34,7 @@ def get_pdf_use_cases() -> PDFUseCases:
     return PDFUseCases(
         register=RegisterPDFUseCase(repository, repository, validator, extractor),
         update=UpdatePDFUseCase(repository, repository, validator, extractor),
+        get_by_id=GetPDFByIdUseCase(repository),
         list_all=ListPDFsUseCase(repository),
         delete=DeletePDFUseCase(repository),
     )

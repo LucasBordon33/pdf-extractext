@@ -11,6 +11,7 @@ from application.ports import (
 )
 from application.use_cases import (
     DeletePDFUseCase,
+    GetPDFByIdUseCase,
     ListPDFsUseCase,
     RegisterPDFUseCase,
     UpdatePDFUseCase,
@@ -160,6 +161,25 @@ def test_update_archivo_invalido_no_actualiza(
         ).execute("pdf-1", pdf_file)
 
     mock_writer.update.assert_not_called()
+
+
+# --- GetPDFByIdUseCase -----------------------------------------------------
+
+def test_get_by_id_camino_feliz_devuelve_el_read_model(mock_reader):
+    doc = {"id": "pdf-1", "name": "doc.pdf", "text": "contenido", "checksum": CHECKSUM}
+    mock_reader.find_by_id.return_value = doc
+
+    result = GetPDFByIdUseCase(mock_reader).execute("pdf-1")
+
+    mock_reader.find_by_id.assert_called_once_with("pdf-1")
+    assert result == doc
+
+
+def test_get_by_id_inexistente_da_not_found(mock_reader):
+    mock_reader.find_by_id.return_value = None
+
+    with pytest.raises(PDFNotFoundError):
+        GetPDFByIdUseCase(mock_reader).execute("pdf-no-existe")
 
 
 # --- ListPDFsUseCase -------------------------------------------------------

@@ -7,6 +7,7 @@ import main
 from application.ports import ReaderPort, WriterPort
 from application.use_cases import (
     DeletePDFUseCase,
+    GetPDFByIdUseCase,
     ListPDFsUseCase,
     PDFUseCases,
     RegisterPDFUseCase,
@@ -58,11 +59,13 @@ class InMemoryPDFRepository(ReaderPort, WriterPort):
 
 def _build_controller(repository: InMemoryPDFRepository) -> PDFController:
     """Compone el grafo real de casos de uso con el repositorio falso."""
+    
     validator = FileFormatPDFValidator()
     extractor = PypdfTextExtractor()
     use_cases = PDFUseCases(
         register=RegisterPDFUseCase(repository, repository, validator, extractor),
         update=UpdatePDFUseCase(repository, repository, validator, extractor),
+        get_by_id=GetPDFByIdUseCase(repository),
         list_all=ListPDFsUseCase(repository),
         delete=DeletePDFUseCase(repository),
     )
@@ -90,9 +93,8 @@ def _read_pdf(name: str) -> bytes:
 
 
 def _upload_bytes() -> bytes:
-    """Contenido distinto al del seed: mismo PDF válido con un sufijo
-    agregado tras el %%EOF (pypdf lo tolera, como ya hace tests/spike_tests.js),
-    lo que cambia el checksum sin romper la extracción."""
+    """Agrega un sufijo al binario para alterar el checksum simulando un PDF distinto, aprovechando que pypdf ignora datos tras el %%EOF."""
+
     return _read_pdf("simple.pdf") + b"update-test-suffix"
 
 
@@ -109,6 +111,22 @@ def test_get_pdfs(client):
     assert body["count"] == 1
     assert body["data"][0]["filename"] == "test.pdf"
     assert body["data"][0]["text_preview"] == "hola"
+
+
+def test_get_pdf_by_id(client):
+    response = client.get("/api/v1/pdfs/1")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "success"
+    assert body["id"] == "1"
+    assert body["filename"] == "test.pdf"
+    assert body["checksum"] == "abc"
+    assert body["text"] == "hola"
+
+
+def test_get_pdf_by_id_not_found(client):
+    response = client.get("/api/v1/pdfs/no-existe")
+    assert response.status_code == 404
 
 
 def test_upload_pdf(client):
@@ -168,9 +186,7 @@ def test_delete_pdf(client, fake_repository):
 
 
 def test_error_inesperado_al_listar_da_500():
-    """Un fallo no previsto (p. ej. caída de la base de datos) se traduce
-    a 500 con contexto a través del manejador de errores centralizado
-    del controller (`_as_http_error`)."""
+    """Verifica que errores no controlados (ej. caída de BD) sean capturados por el manejador central retornando HTTP 500."""
     class RepositorioQueFalla(InMemoryPDFRepository):
         def find_all(self) -> list[dict]:
             raise RuntimeError("boom de prueba")

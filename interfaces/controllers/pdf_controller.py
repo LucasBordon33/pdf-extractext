@@ -73,6 +73,20 @@ class PDFController:
             "message": "Lista de PDFs obtenida correctamente",
         }
 
+    def get_pdf_by_id(self, pdf_id: str):
+        try:
+            pdf = self._use_cases.get_by_id.execute(pdf_id)
+        except Exception as e:
+            raise _as_http_error(e, "obtener el PDF") from e
+        return {
+            "status": "success",
+            "id": pdf["id"],
+            "filename": pdf["name"],
+            "checksum": pdf.get("checksum"),
+            "text": pdf.get("text", ""),
+            "message": "PDF obtenido correctamente",
+        }
+
     async def update_existing_pdf(self, pdf_id: str, file: UploadFile):
         pdf_file = await self._to_domain_file(file)
         try:

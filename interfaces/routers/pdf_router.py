@@ -19,6 +19,11 @@ def read(controller: PDFController = Depends(get_pdf_controller)):
     return controller.get_all_pdfs()
 
 
+@router.get("/pdfs/{pdf_id}")
+def read_by_id(pdf_id: str, controller: PDFController = Depends(get_pdf_controller)):
+    return controller.get_pdf_by_id(pdf_id)
+
+
 @router.put("/pdfs/{pdf_id}")
 async def update(
     pdf_id: str,
