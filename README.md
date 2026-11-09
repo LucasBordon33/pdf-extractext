@@ -6,10 +6,59 @@
 ## proyecto pdf-extractect
 Extraer texto de un PDF proporcionado por el usuario. Hacer un resumen de dicho texto utilizando modelo IA.
 
-## Método de uso
--Iniciar el contenedor Docker, instalando las dependencias necesarias
--Una vez inicializado, realizar peticiones al servidor levantado. Desde una terminal de Linux, se hace utilizando el comando curl.
--Las rutas aceptadas son GET, PUT, POST y DELETE. Ejemplo: curl -k -X GET "https://universidad.localhost/api/v1/pdfs" -H "accept: application/json" 
+## Instalación y ejecución
+
+### 1. Variables de entorno
+
+El proyecto usa **un único archivo `.env` en la raíz del repositorio**. Crealo a partir de la plantilla y completá los valores reales:
+
+```bash
+cp .env.example .env
+```
+
+Lo consumen los tres stacks vía `env_file: ../../.env`: la app lee `MONGO_USER`/`MONGO_PASS` en runtime y mongodb lee `MONGO_INITDB_ROOT_USERNAME`/`MONGO_INITDB_ROOT_PASSWORD` (deben coincidir con las anteriores).
+
+### 2. Red compartida (una sola vez)
+
+Los tres servicios viven en archivos compose separados (`servicios/app/`, `servicios/mongodb/`, `servicios/traefik/`) y se comunican por una **red externa pre-existente**. Creala **una única vez** antes de levantar cualquier stack:
+
+```bash
+docker network create pdf-extractext-network
+```
+
+⚠️ **Prerrequisito estricto**: si la red no existe, ningún stack levanta (`network declared as external, but could not be found`).
+
+### 3. Levantar los servicios (desde la raíz, con `-f`)
+
+```bash
+# Reverse proxy: publica los puertos 80, 443 y 8080 (dashboard en :8080)
+docker compose -f servicios/traefik/docker-compose.yml up -d
+
+# Base de datos MongoDB
+docker compose -f servicios/mongodb/docker-compose.yml up -d
+
+# Monolito FastAPI (la primera ejecución compila la imagen)
+docker compose -f servicios/app/docker-compose.yml up -d
+```
+
+El orden no es estricto: la conexión de la app a Mongo es diferida por request, así que no se cae si Mongo todavía no está levantado. Cada stack también puede operarse de forma independiente desde su propia carpeta (`cd servicios/app && docker compose up -d`).
+
+### 4. Verificación
+
+```bash
+docker ps
+curl -k https://universidad.localhost/api/v1/health
+```
+
+### Detener los servicios
+
+```bash
+docker compose -f servicios/app/docker-compose.yml down
+docker compose -f servicios/mongodb/docker-compose.yml down
+docker compose -f servicios/traefik/docker-compose.yml down
+```
+
+Los datos de MongoDB persisten en el volumen `pdf-extractext_mongodb_data` entre bajadas y levantadas (`down` no borra volúmenes).
 
 ## API
 

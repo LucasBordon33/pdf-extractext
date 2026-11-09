@@ -1,9 +1,3 @@
-# Stack del reverse proxy Traefik (ciclo de vida independiente).
-#
-# Uso (desde esta carpeta):
-#   docker network create pdf-extractext-network   # una sola vez, si no existe
-#   docker compose up -d
-
 services:
   traefik:
     image: traefik:v2.11
@@ -29,8 +23,6 @@ services:
       - "traefik.http.routers.api.tls=true"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      # Ruta ajustada: dos niveles arriba hasta el letsencrypt/ de la raíz del repo
-      # (antes era ./letsencrypt cuando el compose vivía en la raíz).
       - ../../letsencrypt:/letsencrypt
     networks:
       - pdf-extractext-network

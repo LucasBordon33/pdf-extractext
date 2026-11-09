@@ -4,7 +4,9 @@
 > [`analisis-tdd.md`](./analisis-tdd.md) y actualizado tras la migración completa al
 > stack de Clean Architecture (`domain/`, `application/`, `infrastructure/`,
 > `interfaces/`). Define **dónde** se testea el proyecto (seams/fronteras),
-> **cómo** aislar cada capa y **bajo qué reglas** se desarrolla con TDD.
+> **cómo** aislar cada capa y **bajo qué reglas** se desarrolla con TDD, y
+> registra las decisiones técnicas de la infraestructura modular (Docker
+> Compose por servicio).
 
 ## 0. Mapa de la arquitectura (referencia para los seams)
 
@@ -100,7 +102,43 @@ Reglas derivadas:
   (`.github/workflows/ci.yml`) ejecuta `uv sync --locked` + `uv run pytest` en cada
   push a `master`.
 
-## 5. Comandos de referencia
+## 5. Infraestructura (Docker Compose modular)
+
+La infraestructura local dejó de ser un monolito con un único
+`docker-compose.yml` en la raíz: vive segregada en **un stack por servicio**,
+cada uno con su propio archivo compose y **ciclo de vida independiente**.
+
+| Stack | Directorio | Rol |
+|---|---|---|
+| Traefik | `servicios/traefik/` | Reverse proxy: publica 80/443/8080 y enruta por labels |
+| MongoDB | `servicios/mongodb/` | Persistencia (volumen nombrado `pdf-extractext_mongodb_data`) |
+| App | `servicios/app/` | Monolito FastAPI (build desde la raíz, `context: ../..`) |
+
+Decisiones técnicas:
+
+- **Modularidad**: cada stack se levanta, detiene y reconstruye por separado
+  (`docker compose -f servicios/<stack>/docker-compose.yml up -d`). No existe
+  `depends_on` entre stacks (imposible entre archivos compose); es seguro
+  porque la conexión de la app a Mongo es diferida por request
+  (`config.settings.get_db()`).
+- **Red externa**: los tres stacks se comunican por la red Docker **externa**
+  `pdf-extractext-network` — declarada `external: true` en los tres compose y
+  creada una sola vez con `docker network create pdf-extractext-network`. Es el
+  único puente entre stacks: Traefik descubre los contenedores vía
+  `docker.sock` y los alcanza por esa red compartida.
+- **Gestión de configuración**: hay **un único `.env` en la raíz** del repo
+  (gitignored; plantilla en `.env.example`), inyectado en los contenedores con
+  `env_file: ../../.env`. Así se evita duplicar credenciales por servicio y se
+  mantiene un único punto de verdad. En mongodb las credenciales se consumen
+  por nombre directo (`MONGO_INITDB_ROOT_USERNAME/PASSWORD`) porque el
+  `env_file` **no** alimenta la interpolación `${...}` de Compose (solo lo
+  hacen el `.env` del directorio de proyecto o el flag `--env-file`;
+  comportamiento verificado empíricamente).
+
+La guía operativa paso a paso (red, comandos exactos, verificación) vive en el
+[`README.md`](./README.md), sección "Instalación y ejecución".
+
+## 6. Comandos de referencia
 
 ```bash
 # Instalar dependencias (dev incluye pytest, pytest-asyncio, mongomock)

@@ -1,8 +1,3 @@
-# Stack del monolito FastAPI (ciclo de vida independiente).
-#
-# Uso (desde esta carpeta):
-#   docker compose up -d
-
 services:
   monolith-api:
     build:
@@ -16,10 +11,9 @@ services:
     networks:
       - pdf-extractext-network
     # Carga de .env ajustada: ruta relativa a ESTE archivo compose hasta el .env
-    # de la raíz del repo (antes Compose lo leía automáticamente de su propio
-    # directorio, que era la raíz).
+    # de la raíz del repo
     env_file:
-      - .env
+      - ../../.env
 
     labels:
       - "traefik.enable=true"

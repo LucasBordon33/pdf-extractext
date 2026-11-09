@@ -1,14 +1,11 @@
-
-
 services:
   mongodb:
     image: mongo:7-jammy
     container_name: pdf-extractext-mongodb
-    # El ":?" hace fallar el comando con un mensaje claro si faltan las
-    # variables, en lugar de arrancar Mongo sin autenticación en silencio.
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER:?Faltan credenciales - ejecutá con --env-file ../../.env}
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASS:?Faltan credenciales - ejecutá con --env-file ../../.env}
+    # Credenciales leídas por nombre directo desde el .env raíz. Si el archivo
+    # no existe, Compose falla antes de arrancar (env_file es requerido).
+    env_file:
+      - ../../.env
     volumes:
       - mongodb_data:/data/db
     networks:
