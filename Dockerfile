@@ -1,13 +1,9 @@
-# Descarga una imagen oficial que ya tiene instalada la herramienta uv
-# Le pone el apodo "builder" para la primera etapa.
 FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS builder
 
 # Crea una carpeta llamada /app dentro del sistema de archivos del contenedor y 
-# se "mete" en ella. Todos los comandos que sigan ocurrirán dentro de esta carpeta.
 WORKDIR /app
 
 # Copiamos los archivos del proyecto.
-# .dockerignore evita que copiemos cosas innecesarias o privadas
 COPY . .
 
 # Le decimos a uv dónde debe crear el entorno virtual desde el inicio. 
@@ -18,7 +14,6 @@ ENV UV_PROJECT_ENVIRONMENT="/opt/venv"
 # --no--dev evita instalar herramientas de desarrollo (como librerías de testing) para ahorrar espacio.
 RUN uv sync --frozen --no-dev
 
-# Arranca de cero una segunda etapa "runner" con un mini-Linux que solo tiene Python.
 FROM python:3.12-slim-bookworm AS runner
 
 # Vuelve a crear y posicionarse en la carpeta /app.
@@ -28,7 +23,6 @@ WORKDIR /app
 COPY --from=builder /opt/venv /opt/venv
 
 # 2. Copiamos el código fuente de nuestra PC al runner
-# (Nuevamente, el .dockerignore evita que se copie basura)
 COPY . .
 
 # "Activa" el entorno virtual de forma automática. Le dice al Linux interno que busque primero en .venv cuando ejecute python
@@ -38,7 +32,7 @@ ENV PATH="/opt/venv/bin:${PATH}"
 ENV PYTHONDONTWRITEBYTECODE=1
 
 # Fuerza a que todos los mensajes de la consola (como los print() o los errores) 
-# Se muestren instantá  neamente en tu pantalla sin quedarse atascados en la memoria intermedia de Linux.
+# Se muestren instantá neamente en tu pantalla sin quedarse atascados en la memoria intermedia de Linux.
 ENV PYTHONUNBUFFERED=1
 
 # Creamos un usuario no root para evitar escalados de privilegios

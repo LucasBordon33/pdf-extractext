@@ -1,0 +1,33 @@
+
+
+services:
+  mongodb:
+    image: mongo:7-jammy
+    container_name: pdf-extractext-mongodb
+    # El ":?" hace fallar el comando con un mensaje claro si faltan las
+    # variables, en lugar de arrancar Mongo sin autenticación en silencio.
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER:?Faltan credenciales - ejecutá con --env-file ../../.env}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASS:?Faltan credenciales - ejecutá con --env-file ../../.env}
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - pdf-extractext-network
+    restart: unless-stopped
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mongodb_data:
+    # Nombre explícito para reutilizar el volumen creado por el compose original
+    # (pdf-extractext_mongodb_data) y no perder los datos ya cargados.
+    name: pdf-extractext_mongodb_data
+
+networks:
+  pdf-extractext-network:
+    # Red pre-existente compartida por los tres stacks (traefik, mongodb, app).
+    # Crearla una vez con: docker network create pdf-extractext-network
+    external: true

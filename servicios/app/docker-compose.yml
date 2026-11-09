@@ -1,0 +1,35 @@
+# Stack del monolito FastAPI (ciclo de vida independiente).
+#
+# Uso (desde esta carpeta):
+#   docker compose up -d
+
+services:
+  monolith-api:
+    build:
+      # Contexto ajustado: la raíz del repo (donde viven el Dockerfile y el
+      # .dockerignore) está dos niveles arriba de este archivo.
+      context: ../..
+      dockerfile: Dockerfile
+      target: runner
+    image: pdf-extractext:1.0.1
+    container_name: pdf-extractext
+    networks:
+      - pdf-extractext-network
+    # Carga de .env ajustada: ruta relativa a ESTE archivo compose hasta el .env
+    # de la raíz del repo (antes Compose lo leía automáticamente de su propio
+    # directorio, que era la raíz).
+    env_file:
+      - .env
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.monolith-api.rule=Host(`universidad.localhost`)"
+      - "traefik.http.routers.monolith-api.entrypoints=websecure"
+      - "traefik.http.routers.monolith-api.tls=true"
+      - "traefik.http.services.monolith-api.loadbalancer.server.port=8000"
+
+networks:
+  pdf-extractext-network:
+    # Red pre-existente compartida por los tres stacks (traefik, mongodb, app).
+    # Crearla una vez con: docker network create pdf-extractext-network
+    external: true

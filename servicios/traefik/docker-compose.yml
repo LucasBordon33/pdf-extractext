@@ -1,0 +1,42 @@
+# Stack del reverse proxy Traefik (ciclo de vida independiente).
+#
+# Uso (desde esta carpeta):
+#   docker network create pdf-extractext-network   # una sola vez, si no existe
+#   docker compose up -d
+
+services:
+  traefik:
+    image: traefik:v2.11
+    container_name: traefik
+    command:
+      - --api.insecure=true
+      - --api.dashboard=true
+      - --providers.docker=true
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.default.acme.tlschallenge=true
+      - --certificatesresolvers.default.acme.email=tuemail@ejemplo.com
+      - --certificatesresolvers.default.acme.storage=/letsencrypt/acme.json
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    labels: 
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`traefik.universidad.localhost`)"
+      - "traefik.http.routers.api.service=api@internal"
+      - "traefik.http.routers.api.entrypoints=websecure"
+      - "traefik.http.routers.api.tls=true"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Ruta ajustada: dos niveles arriba hasta el letsencrypt/ de la raíz del repo
+      # (antes era ./letsencrypt cuando el compose vivía en la raíz).
+      - ../../letsencrypt:/letsencrypt
+    networks:
+      - pdf-extractext-network
+
+networks:
+  pdf-extractext-network:
+    # Red pre-existente compartida por los tres stacks (traefik, mongodb, app).
+    # Crearla una vez con: docker network create pdf-extractext-network
+    external: true
